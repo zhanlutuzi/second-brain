@@ -107,10 +107,13 @@ second-brain-kit/
 | kb fetch &lt;文件&gt; | 抓取条目中的链接正文，写回该文件 | 成功或失败及原因 |
 | kb file &lt;文件&gt; [--title &lt;标题&gt;] [--summary &lt;摘要&gt;] | 把条目移入 raw/年/月/，规范文件名；标题和一句话摘要由 skill 传入 | 新路径，或重复时指向已有的 raw 文件 |
 | kb index | 根据 wiki 页面的 frontmatter 重新生成 index.md | 页面数 |
-| kb lint | 运行确定性检查 | 问题列表 |
+| kb lint [--record] | 运行确定性检查；--record 把今天记为上次体检日期（lint skill 收尾时使用） | 问题列表 |
 | kb react [&lt;结果文件&gt;] | 按处理结果给飞书消息加表情。不带参数时自动判断：kb file 入库成功的消息加"成功"表情，inbox/ 中抓取失败的消息加"失败"表情 | 成功数 |
 | kb commit -m &lt;说明&gt; | 在 vault 中提交一次 | commit id |
 | kb status | 待处理条目（按时间排序）、上次体检日期、未回复的追问、个人设置 | 状态摘要 |
+| kb init &lt;vault 路径&gt; | 首次安装：复制 vault-template，用 separate-git-dir 初始化 git 并做第一次提交 | vault 和 git 目录 |
+| kb upgrade | 用 kit 中的新版本覆盖 vault 的系统文件，保留 CLAUDE.md 的个人补充 | 更新的文件列表 |
+| kb config [--app-id] [--app-secret] [--chat-id] | 写入飞书凭证（~/.second-brain/.env，权限 600）和群 ID（我的设置） | 已写入的项（Secret 打码） |
 | kb question --set &lt;问题&gt; [--related &lt;页面&gt;] / --clear | 记录或清除本次追问（写入 state.json） | 当前追问 |
 
 ### 飞书适配器（kb pull / kb react）
@@ -305,16 +308,18 @@ lint_interval_days: 30
 
 ### setup
 
+确定性的操作由 kb init、kb upgrade、kb config 完成，setup skill 负责一问一答并调用它们。首次安装时 vault 还不存在，所以首次安装用的 setup skill 放在 kit 仓库的 .claude/skills/setup/，在 kit 目录启动 Claude Code 后运行；vault 里的 setup skill 负责升级和修改飞书配置。
+
 首次安装时：
 
 1. 检查 Node 20+ 和 git，在 kit 目录执行 npm install；
 2. 询问 vault 放在哪里，默认是 iCloud 的 Obsidian 目录；
-3. 把 vault-template 复制过去，用 separate-git-dir 初始化 git；
-4. 引导用户填写飞书 App ID、App Secret 和群 ID，写入 ~/.second-brain/.env 和"我的设置"；
+3. 运行 kb init，把 vault-template 复制过去，用 separate-git-dir 初始化 git（目标目录必须为空，或只有 Obsidian 自己的 .obsidian/）；
+4. 引导用户填写飞书 App ID、App Secret 和群 ID，用 kb config 写入 ~/.second-brain/.env 和"我的设置"（可以跳过，只用 inbox/ 文件夹）；
 5. 运行一次 kb pull --dry-run，测试连通性；
 6. 在 ~/.zshrc 中加一个 kb-open 函数，用来进入 vault 目录并启动 Claude Code。
 
-加 --upgrade 参数时，只用 kit 中的新版本覆盖系统文件。
+加 --upgrade 参数时，先在 kit 目录 git pull，再运行 kb upgrade，只用 kit 中的新版本覆盖系统文件（CLAUDE.md、.claude/、_templates/），CLAUDE.md 中"个人补充"标记之后的内容原样保留。
 
 ## 版本控制、同步与密钥
 
