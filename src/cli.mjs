@@ -86,6 +86,7 @@ export async function main(argv, io = process, env = process.env) {
     vault: resolveVault(parsed.values.vault, env),
     env,
     fetch: io.fetch,
+    browser: io.browser,
   };
 
   try {

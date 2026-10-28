@@ -1,15 +1,15 @@
 // Registry of kb subcommands. Each entry describes its arguments for --help and
 // option parsing; `run` receives a context and returns a result object.
-// Stubs report the stage (see docs/TECH.md) in which they get implemented.
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createClient } from '../feishu/client.mjs';
 import { loadCredentials, mask } from '../feishu/config.mjs';
 import { pull } from '../feishu/pull.mjs';
+import { fetchEntry } from '../fetch/index.mjs';
 import { react } from '../feishu/react.mjs';
 import { lintVault } from '../lint/index.mjs';
-import { fail, notImplemented, ok } from '../result.mjs';
+import { fail, ok } from '../result.mjs';
 import { fileEntry } from '../vault/file.mjs';
 import { commitVault } from '../vault/git.mjs';
 import { writeIndex } from '../vault/indexer.mjs';
@@ -17,8 +17,6 @@ import { SETTINGS_FILE } from '../vault/layout.mjs';
 import { readSettings } from '../vault/settings.mjs';
 import { setQuestion } from '../vault/question.mjs';
 import { vaultStatus } from '../vault/status.mjs';
-
-const stub = (name, stage) => async () => notImplemented(name, stage);
 
 // Vault commands refuse to run anywhere that is not a vault (e.g. the kit repo),
 // so a stray `kb commit` can never commit someone else's files.
@@ -75,7 +73,9 @@ export const COMMANDS = [
     summary: 'Fetch the linked page of an inbox entry and write the body back',
     options: {},
     stage: 'P3',
-    run: stub('fetch', 'P3'),
+    run: inVault(async (ctx) =>
+      onePositional(ctx, 'file') ??
+      fetchEntry(ctx.vault, ctx.positionals[0], { settings: await readSettings(ctx.vault), env: ctx.env, fetch: ctx.fetch, browser: ctx.browser })),
   },
   {
     name: 'file',
