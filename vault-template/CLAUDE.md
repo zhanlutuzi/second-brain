@@ -165,11 +165,11 @@ git 提交说明与这条记录的标题一致。
 | `kb file <文件> --title <标题> --summary <摘要>` | 把条目移入 `raw/年/月/`；重复的内容返回 `duplicate: true` |
 | `kb index` | 重新生成 `index.md` |
 | `kb lint` | 确定性检查 |
-| `kb react <结果文件>` | 给飞书消息加表情 |
+| `kb react` | 给已入库和抓取失败的飞书消息加表情 |
 | `kb commit -m <说明>` | 在 vault 中提交一次 |
 | `kb question --set <问题> --related <页面>` / `--clear` | 记录或清除本次追问 |
 
-搜索 wiki 用 `rg`（ripgrep）。`kb` 返回 `error: "not_implemented"` 表示该功能尚未开发，跳过那一步即可。
+搜索 wiki 用 `rg`（ripgrep）。`kb` 返回 `error` 为 `not_implemented`（尚未开发）或 `not_configured`（没有配置飞书）时，跳过那一步即可。
 
 ## 命令
 

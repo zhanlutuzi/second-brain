@@ -16,3 +16,12 @@ export function datePart(value) {
 export function daysBetween(from, to) {
   return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
 }
+
+// ISO timestamp in the machine's local time zone, e.g. 2026-10-28T08:20:11+08:00.
+export function isoLocal(ms) {
+  const d = new Date(Number(ms));
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? '+' : '-';
+  const abs = Math.abs(off);
+  return `${localDate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}

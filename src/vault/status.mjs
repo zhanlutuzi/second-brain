@@ -26,6 +26,7 @@ export async function inboxEntries(vault) {
         path: rel,
         kind: data.kind,
         source: data.source,
+        message_id: data.message_id ?? null,
         title: deriveTitle(data, body, stem(file)),
         url: data.url ?? null,
         sent_at: String(data.sent_at ?? data.created ?? ''),

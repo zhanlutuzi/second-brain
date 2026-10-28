@@ -1,0 +1,15 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "reaction_id": "fixture_reaction",
+    "operator": {
+      "operator_id": "cli_fixture_app",
+      "operator_type": "app"
+    },
+    "action_time": "1761611600000",
+    "reaction_type": {
+      "emoji_type": "OK"
+    }
+  }
+}

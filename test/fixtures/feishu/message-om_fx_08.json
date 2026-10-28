@@ -1,0 +1,102 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "items": [
+      {
+        "message_id": "om_fx_08",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "merge_forward",
+        "create_time": "1761611420000",
+        "update_time": "1761611420000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "\"Merged and Forwarded Message\""
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_81",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611001000",
+        "update_time": "1761611001000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant",
+          "sender_name": "示例成员 A"
+        },
+        "body": {
+          "content": "{\"text\": \"周五的分享改到下午三点\"}"
+        },
+        "mentions": [],
+        "upper_message_id": "om_fx_08"
+      },
+      {
+        "message_id": "om_fx_82",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611002000",
+        "update_time": "1761611002000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant",
+          "sender_name": "示例成员 B"
+        },
+        "body": {
+          "content": "{\"text\": \"好的，我来订会议室\"}"
+        },
+        "mentions": [],
+        "upper_message_id": "om_fx_08"
+      },
+      {
+        "message_id": "om_fx_83",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "image",
+        "create_time": "1761611003000",
+        "update_time": "1761611003000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"image_key\": \"img_v3_fixture_child\"}"
+        },
+        "mentions": [],
+        "upper_message_id": "om_fx_08"
+      }
+    ]
+  }
+}

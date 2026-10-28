@@ -12,7 +12,7 @@ const KB = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
 const TEMPLATE = fileURLToPath(new URL('../vault-template', import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status', 'question'];
-const STUBS = ['pull', 'fetch', 'react'];
+const STUBS = ['fetch'];
 
 // Run main() with captured stdout.
 async function run(argv, env = {}) {
@@ -76,7 +76,7 @@ describe('JSON output contract', () => {
     const { code, out } = await run([name, 'x'], env);
     const result = JSON.parse(out);
     expect(result).toMatchObject({ ok: false, error: 'not_implemented', command: name });
-    expect(result.stage).toMatch(/^P[2-4]$/);
+    expect(result.stage).toMatch(/^P[3-4]$/);
     expect(code).toBe(2);
   });
 
@@ -99,7 +99,8 @@ describe('JSON output contract', () => {
   });
 
   it('passes command-specific options through', async () => {
-    expect(JSON.parse((await run(['pull', '--dry-run'], env)).out).error).toBe('not_implemented');
+    expect(JSON.parse((await run(['pull', '--dry-run', '--since', '2026-10-01'], env)).out).error).toBe('not_configured');
+    expect(JSON.parse((await run(['react'], env)).out).error).toBe('not_configured');
     expect(JSON.parse((await run(['file', 'a', 'b'], env)).out).error).toBe('invalid_arguments');
   });
 
@@ -107,7 +108,7 @@ describe('JSON output contract', () => {
     let status = 0;
     let stdout = '';
     try {
-      execFileSync(process.execPath, [KB, 'react', 'x'], { encoding: 'utf8' });
+      execFileSync(process.execPath, [KB, 'fetch', 'x'], { encoding: 'utf8' });
     } catch (err) {
       ({ status, stdout } = err);
     }
