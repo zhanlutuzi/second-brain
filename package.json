@@ -20,9 +20,14 @@
     "url": "https://github.com/zhanlutuzi/second-brain.git"
   },
   "dependencies": {
+    "defuddle": "^0.19.6",
+    "linkedom": "^0.18.14",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "vitest": "^4.1.12"
+  },
+  "optionalDependencies": {
+    "playwright": "1.63.0"
   }
 }

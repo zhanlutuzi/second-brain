@@ -115,7 +115,7 @@ describe('我的设置.md', () => {
   it('has the configuration fields from docs/TECH.md and no real IDs', () => {
     const fm = frontmatter(read('我的设置.md'));
     expect(Object.keys(fm).sort()).toEqual(
-      ['batch_limit', 'browser_domains', 'feishu_chat_id', 'life_categories', 'lint_interval_days', 'projects', 'reaction_failed', 'reaction_ok'],
+      ['batch_limit', 'browser_domains', 'browser_headless', 'feishu_chat_id', 'life_categories', 'lint_interval_days', 'projects', 'reaction_failed', 'reaction_ok'],
     );
     expect(fm.feishu_chat_id).toBe('');
     expect(fm.batch_limit).toBe(30);

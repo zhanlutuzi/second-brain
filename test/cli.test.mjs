@@ -12,7 +12,6 @@ const KB = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
 const TEMPLATE = fileURLToPath(new URL('../vault-template', import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status', 'question'];
-const STUBS = ['fetch'];
 
 // Run main() with captured stdout.
 async function run(argv, env = {}) {
@@ -72,15 +71,7 @@ describe('JSON output contract', () => {
     expect(JSON.parse(out)).toHaveProperty('ok');
   });
 
-  it.each(STUBS)('kb %s is a stub that names its stage', async (name) => {
-    const { code, out } = await run([name, 'x'], env);
-    const result = JSON.parse(out);
-    expect(result).toMatchObject({ ok: false, error: 'not_implemented', command: name });
-    expect(result.stage).toMatch(/^P[3-4]$/);
-    expect(code).toBe(2);
-  });
-
-  it.each(['status', 'index', 'lint', 'commit', 'file'])('kb %s refuses to run outside a vault', async (name) => {
+  it.each(['status', 'index', 'lint', 'commit', 'file', 'fetch', 'pull', 'react'])('kb %s refuses to run outside a vault', async (name) => {
     const { code, out } = await run([name, '-m', 'x'].slice(0, name === 'commit' ? 3 : 1), { ...env, KB_VAULT: tmp });
     expect(code).toBe(1);
     expect(JSON.parse(out).error).toBe('not_a_vault');
@@ -104,15 +95,15 @@ describe('JSON output contract', () => {
     expect(JSON.parse((await run(['file', 'a', 'b'], env)).out).error).toBe('invalid_arguments');
   });
 
-  it('exits with the stub code through bin/kb.mjs', () => {
+  it('exits non-zero through bin/kb.mjs when a command fails', () => {
     let status = 0;
     let stdout = '';
     try {
-      execFileSync(process.execPath, [KB, 'fetch', 'x'], { encoding: 'utf8' });
+      execFileSync(process.execPath, [KB, 'fetch', 'x'], { encoding: 'utf8', cwd: tmp });
     } catch (err) {
       ({ status, stdout } = err);
     }
-    expect(status).toBe(2);
-    expect(JSON.parse(stdout).error).toBe('not_implemented');
+    expect(status).toBe(1);
+    expect(JSON.parse(stdout).error).toBe('not_a_vault');
   });
 });

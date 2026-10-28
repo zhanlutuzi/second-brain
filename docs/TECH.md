@@ -151,6 +151,15 @@ second-brain-kit/
 
 **判定失败的标准**：HTTP 状态非 2xx；正文少于 200 字；或者正文命中验证页特征词（如"环境异常""完成验证"）。
 
+**实现细节**：
+
+- 直接抓取 20 秒超时，浏览器抓取 45 秒超时；按响应头或页面 meta 里声明的字符集解码，兼容 GBK 等非 UTF-8 页面。
+- Defuddle 关闭 useAsync，不向第三方接口请求内容，保证行为确定、测试离线。
+- 公众号页面的正文容器默认是隐藏的（由脚本显示），图片地址放在 data-src 里。解析前先去掉隐藏样式、把 data-src 补成 src，否则正文和图片会丢失。
+- Playwright 作为 kit 的可选依赖（固定版本），浏览器需要用户另外运行 `npx playwright install chromium` 安装；没装时第二级记为失败原因 browser_unavailable，不影响第一级。
+- 浏览器默认无头运行；"我的设置"中的 browser_headless 设为 false 可改为有头（例如需要手动登录或过验证时）。最终默认值等 P3 实测后决定。
+- kb fetch 写回条目：成功时 fetch_status: ok，正文替换为抓到的 Markdown，并补上 title、author、published（只保留日期）、site；失败时 fetch_status: failed，fetch_error 写明每一级的原因，例如 `direct: http_403; browser: verification_page`。命令本身返回 ok: true，抓取结果看 status 字段。
+
 ### 入库编译（由 inbox skill 驱动）
 
 - **单次上限**：每次最多处理 30 个条目，剩余的留到下次，避免上下文过长。
@@ -247,6 +256,7 @@ feishu_chat_id: oc_xxx
 reaction_ok: OK                          # 默认值待开发时确认
 reaction_failed: CRY
 browser_domains: [mp.weixin.qq.com, xiaohongshu.com]
+browser_headless: true
 projects: [会员增长, 数据平台]
 life_categories: [社保医保, 健康, 证件与办事, 软件工具]
 batch_limit: 30
@@ -349,7 +359,7 @@ lint_interval_days: 30
 
 - [ ] 表情回复的默认 emoji_type：暂定 OK 和 CRY，P2 本地实测确认
 - [ ] 会议记录原文能否存入个人 vault（PRD 遗留问题，不影响开发）
-- [ ] Playwright 浏览器以有头还是无头模式运行（P3 实测后决定）
+- [ ] Playwright 浏览器以有头还是无头模式运行：暂定无头，可用 browser_headless 切换（P3 实测后决定默认值）
 
 ## Sources
 

@@ -6,7 +6,7 @@
 - **整理**：电脑开着时说一句"处理收件箱"，Claude Code 调用 `kb` 脚本拉取、抓取、归档，把内容编译进 Obsidian 里的主题页、项目页和生活页。
 - **思考**：每次处理后只问你一个问题，你的回答以原话存进"思考"。AI 不代写你的观点。
 
-> 🚧 **开发中**：已完成 P1（本地闭环），可以用 vault 里的 `inbox/` 文件夹试用；飞书拉取（P2）和网页抓取（P3）还没做。正式的一键安装会在 P4 补齐。
+> 🚧 **开发中**：已完成本地闭环（P1）、飞书拉取（P2）和网页抓取（P3）。正式的一键安装（/setup）会在 P4 补齐。
 
 ## 两部分
 
@@ -59,6 +59,30 @@ docs/               PRD、技术方案、Karpathy 原文
 4. 用 Obsidian 打开 `~/kb-trial` 查看结果。之后可以直接提问，例如"读书会小程序为什么延期"。
 
 试完删除 `~/kb-trial` 和 `~/.second-brain/trial.git` 即可。
+
+### 接入飞书和网页抓取（P2、P3）
+
+1. 浏览器抓取（公众号等）需要安装 Chromium：
+
+   ```bash
+   cd ~/second-brain-kit && npx playwright install chromium
+   ```
+
+2. 按 [docs/TECH.md](docs/TECH.md)"飞书适配器"一节在飞书开放平台建好应用和机器人，然后把凭证写进 `~/.second-brain/.env`（不会进入 vault，也不会同步到手机）：
+
+   ```bash
+   mkdir -p ~/.second-brain && printf 'FEISHU_APP_ID=你的AppID\nFEISHU_APP_SECRET=你的AppSecret\n' > ~/.second-brain/.env && chmod 600 ~/.second-brain/.env
+   ```
+
+3. 在 vault 的 `我的设置.md` 里填上 `feishu_chat_id`（收件箱群的 ID，以 oc_ 开头）。
+
+4. 在 vault 目录里先试一下连通性，这一步不会写任何文件：
+
+   ```bash
+   kb pull --dry-run --since 2026-10-01
+   ```
+
+之后说"处理收件箱"，就会从飞书拉取消息、抓取链接正文、入库并给消息加表情。
 
 ## 开发
 

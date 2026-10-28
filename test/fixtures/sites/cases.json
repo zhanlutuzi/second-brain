@@ -1,0 +1,102 @@
+{
+  "weixin": {
+    "url": "https://mp.weixin.qq.com/s/fixture-article",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "zhihu": {
+    "url": "https://zhuanlan.zhihu.com/p/100000001",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "sspai": {
+    "url": "https://sspai.com/post/90001",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "juejin": {
+    "url": "https://juejin.cn/post/7400000000000000001",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "csdn": {
+    "url": "https://blog.csdn.net/fixture/article/details/140000001",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "medium": {
+    "url": "https://medium.com/@fixture/capture-is-easy-processing-is-hard-0123456789ab",
+    "expect_in_body": [
+      "Most people think the ha",
+      "Finally, every conclusio"
+    ],
+    "expect_not_in_body": [
+      "Recommended for you: ten productivity tools"
+    ]
+  },
+  "substack": {
+    "url": "https://example.substack.com/p/capture-is-easy",
+    "expect_in_body": [
+      "Most people think the ha",
+      "Finally, every conclusio"
+    ],
+    "expect_not_in_body": [
+      "Recommended for you: ten productivity tools"
+    ]
+  },
+  "github": {
+    "url": "https://github.com/example/inbox-zero-notes",
+    "expect_in_body": [
+      "Most people think the ha",
+      "Finally, every conclusio"
+    ],
+    "expect_not_in_body": [
+      "Recommended for you: ten productivity tools"
+    ]
+  },
+  "wikipedia": {
+    "url": "https://zh.wikipedia.org/wiki/%E4%B8%AA%E4%BA%BA%E7%9F%A5%E8%AF%86%E7%AE%A1%E7%90%86",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  },
+  "wordpress": {
+    "url": "https://blog.example.org/2026/10/12/processing-is-hard/",
+    "expect_in_body": [
+      "很多人以为知识管理的难点在于收集，其实真正的难点",
+      "最后，整理的结果要能回溯到原始资料。每一条结论后"
+    ],
+    "expect_not_in_body": [
+      "相关推荐：十个你不知道的效率工具"
+    ]
+  }
+}

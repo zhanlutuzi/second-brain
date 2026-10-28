@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS = {
   reaction_ok: 'OK',
   reaction_failed: 'CRY',
   browser_domains: ['mp.weixin.qq.com'],
+  browser_headless: true,
   projects: [],
   life_categories: [],
   batch_limit: 30,
