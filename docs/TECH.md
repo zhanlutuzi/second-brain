@@ -229,12 +229,13 @@ tags: [AI, 知识管理]
 
 ### 我的设置.md
 
-结构化配置放在 frontmatter 里，正文留给用户写备注。
+结构化配置放在 frontmatter 里，正文留给用户写备注。所有字段都是平铺的（不用嵌套对象），因为 Obsidian 的属性面板无法编辑嵌套对象。
 
 ```yaml
 ---
 feishu_chat_id: oc_xxx
-reactions: { ok: OK, failed: CRY }      # 默认值待开发时确认
+reaction_ok: OK                          # 默认值待开发时确认
+reaction_failed: CRY
 browser_domains: [mp.weixin.qq.com, xiaohongshu.com]
 projects: [会员增长, 数据平台]
 life_categories: [社保医保, 健康, 证件与办事, 软件工具]
