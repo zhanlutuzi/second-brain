@@ -2,6 +2,7 @@
   "attachmentFolderPath": "raw/assets",
   "useMarkdownLinks": false,
   "alwaysUpdateLinks": true,
+  "showInlineTitle": false,
   "userIgnoreFilters": [
     "_templates/"
   ]

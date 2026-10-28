@@ -99,12 +99,16 @@ describe('我的设置.md', () => {
   it('has the configuration fields from docs/TECH.md and no real IDs', () => {
     const fm = frontmatter(read('我的设置.md'));
     expect(Object.keys(fm).sort()).toEqual(
-      ['batch_limit', 'browser_domains', 'feishu_chat_id', 'life_categories', 'lint_interval_days', 'projects', 'reactions'],
+      ['batch_limit', 'browser_domains', 'feishu_chat_id', 'life_categories', 'lint_interval_days', 'projects', 'reaction_failed', 'reaction_ok'],
     );
     expect(fm.feishu_chat_id).toBe('');
     expect(fm.batch_limit).toBe(30);
     expect(fm.lint_interval_days).toBe(30);
     expect(fm.browser_domains).toContain('mp.weixin.qq.com');
+    // Flat scalars only: Obsidian's properties panel cannot edit nested objects.
+    for (const value of Object.values(fm)) {
+      expect(Array.isArray(value) || typeof value !== 'object').toBe(true);
+    }
   });
 });
 
