@@ -2,9 +2,20 @@
 // option parsing; `run` receives a context and returns a result object.
 // Stubs report the stage (see docs/TECH.md) in which they get implemented.
 
-import { notImplemented } from '../result.mjs';
+import { lintVault } from '../lint/index.mjs';
+import { fail, notImplemented, ok } from '../result.mjs';
+import { fileEntry } from '../vault/file.mjs';
+import { commitVault } from '../vault/git.mjs';
+import { writeIndex } from '../vault/indexer.mjs';
+import { setQuestion } from '../vault/question.mjs';
+import { vaultStatus } from '../vault/status.mjs';
 
 const stub = (name, stage) => async () => notImplemented(name, stage);
+
+function onePositional(ctx, label) {
+  if (ctx.positionals.length !== 1) return fail('invalid_arguments', `Usage: kb ${ctx.command} <${label}>`);
+  return null;
+}
 
 export const COMMANDS = [
   {
@@ -25,11 +36,13 @@ export const COMMANDS = [
   },
   {
     name: 'file',
-    usage: 'kb file <file>',
+    usage: 'kb file <file> [--title <t>] [--summary <s>]',
     summary: 'Move an inbox entry into raw/YYYY/MM/ with a normalized name',
-    options: {},
+    options: { title: { type: 'string' }, summary: { type: 'string' } },
     stage: 'P1',
-    run: stub('file', 'P1'),
+    run: async (ctx) =>
+      onePositional(ctx, 'file') ??
+      fileEntry(ctx.vault, ctx.positionals[0], { title: ctx.args.title, summary: ctx.args.summary }),
   },
   {
     name: 'index',
@@ -37,7 +50,7 @@ export const COMMANDS = [
     summary: 'Regenerate index.md from wiki page frontmatter',
     options: {},
     stage: 'P1',
-    run: stub('index', 'P1'),
+    run: async (ctx) => ok(await writeIndex(ctx.vault)),
   },
   {
     name: 'lint',
@@ -45,7 +58,7 @@ export const COMMANDS = [
     summary: 'Run deterministic checks (dead links, orphans, frontmatter, ...)',
     options: {},
     stage: 'P1',
-    run: stub('lint', 'P1'),
+    run: async (ctx) => ok(await lintVault(ctx.vault)),
   },
   {
     name: 'react',
@@ -61,7 +74,7 @@ export const COMMANDS = [
     summary: 'Commit the vault once',
     options: { message: { type: 'string', short: 'm' } },
     stage: 'P1',
-    run: stub('commit', 'P1'),
+    run: async (ctx) => commitVault(ctx.vault, ctx.args.message),
   },
   {
     name: 'status',
@@ -69,7 +82,15 @@ export const COMMANDS = [
     summary: 'Show pending inbox entries, last lint date and unanswered question',
     options: {},
     stage: 'P1',
-    run: stub('status', 'P1'),
+    run: async (ctx) => vaultStatus(ctx.vault, ctx.env),
+  },
+  {
+    name: 'question',
+    usage: 'kb question --set <text> [--related <page>] | --clear',
+    summary: 'Remember or clear the follow-up question asked after an inbox run',
+    options: { set: { type: 'string' }, related: { type: 'string' }, clear: { type: 'boolean' } },
+    stage: 'P1',
+    run: async (ctx) => setQuestion({ text: ctx.args.set, related: ctx.args.related, clear: ctx.args.clear }, ctx.env),
   },
 ];
 
