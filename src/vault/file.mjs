@@ -45,7 +45,7 @@ export function deriveTitle(data, body, fallback) {
   if (data.title) return String(data.title);
   const heading = firstHeading(body);
   if (heading) return heading;
-  if (data.kind === 'thought') return firstLine(body);
+  if (data.kind !== 'link' && firstLine(body)) return firstLine(body);
   if (data.url) {
     try {
       const u = new URL(data.url);

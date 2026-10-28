@@ -1,13 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { helpText, main } from '../src/cli.mjs';
 import { COMMANDS } from '../src/commands/index.mjs';
 
 const KB = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
+const TEMPLATE = fileURLToPath(new URL('../vault-template', import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status'];
+const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status', 'question'];
+const STUBS = ['pull', 'fetch', 'react'];
 
 // Run main() with captured stdout.
 async function run(argv, env = {}) {
@@ -51,15 +56,34 @@ describe('kb --version', () => {
 });
 
 describe('JSON output contract', () => {
-  it.each(EXPECTED)('kb %s prints one JSON object', async (name) => {
-    const { code, out } = await run([name, 'some-arg']);
+  let tmp;
+  let env;
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), 'kb-cli-'));
+    await cp(TEMPLATE, join(tmp, 'vault'), { recursive: true });
+    env = { KB_VAULT: join(tmp, 'vault'), SECOND_BRAIN_HOME: join(tmp, 'home') };
+  });
+  afterEach(() => rm(tmp, { recursive: true, force: true }));
+
+  it.each(EXPECTED)('kb %s prints exactly one JSON object', async (name) => {
+    const { out } = await run([name], env);
     expect(out.endsWith('\n')).toBe(true);
     expect(out.trim().split('\n')).toHaveLength(1);
+    expect(JSON.parse(out)).toHaveProperty('ok');
+  });
+
+  it.each(STUBS)('kb %s is a stub that names its stage', async (name) => {
+    const { code, out } = await run([name, 'x'], env);
     const result = JSON.parse(out);
-    // P0: every command is a stub that names the stage implementing it.
     expect(result).toMatchObject({ ok: false, error: 'not_implemented', command: name });
-    expect(result.stage).toMatch(/^P[1-4]$/);
+    expect(result.stage).toMatch(/^P[2-4]$/);
     expect(code).toBe(2);
+  });
+
+  it.each(['status', 'index', 'lint', 'commit', 'file'])('kb %s refuses to run outside a vault', async (name) => {
+    const { code, out } = await run([name, '-m', 'x'].slice(0, name === 'commit' ? 3 : 1), { ...env, KB_VAULT: tmp });
+    expect(code).toBe(1);
+    expect(JSON.parse(out).error).toBe('not_a_vault');
   });
 
   it('reports unknown commands as JSON with a non-zero exit code', async () => {
@@ -69,21 +93,21 @@ describe('JSON output contract', () => {
   });
 
   it('reports unknown options as JSON with a non-zero exit code', async () => {
-    const { code, out } = await run(['status', '--bogus']);
+    const { code, out } = await run(['status', '--bogus'], env);
     expect(code).toBe(1);
     expect(JSON.parse(out)).toMatchObject({ ok: false, error: 'invalid_arguments' });
   });
 
-  it('accepts command-specific options', async () => {
-    expect(JSON.parse((await run(['commit', '-m', 'msg'])).out).error).toBe('not_implemented');
-    expect(JSON.parse((await run(['pull', '--dry-run'])).out).error).toBe('not_implemented');
+  it('passes command-specific options through', async () => {
+    expect(JSON.parse((await run(['pull', '--dry-run'], env)).out).error).toBe('not_implemented');
+    expect(JSON.parse((await run(['file', 'a', 'b'], env)).out).error).toBe('invalid_arguments');
   });
 
   it('exits with the stub code through bin/kb.mjs', () => {
     let status = 0;
     let stdout = '';
     try {
-      execFileSync(process.execPath, [KB, 'status'], { encoding: 'utf8' });
+      execFileSync(process.execPath, [KB, 'react', 'x'], { encoding: 'utf8' });
     } catch (err) {
       ({ status, stdout } = err);
     }
