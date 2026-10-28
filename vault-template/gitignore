@@ -1,0 +1,12 @@
+# Copied to the vault as .gitignore by /setup.
+# Obsidian UI state: the main source of sync conflicts
+.obsidian/workspace*.json
+.obsidian/cache
+
+# macOS
+.DS_Store
+
+# Binary attachments waiting in inbox/ (they are filed into raw/assets/ when processed)
+inbox/*
+!inbox/*.md
+!inbox/.gitkeep
