@@ -164,10 +164,12 @@ git 提交说明与这条记录的标题一致。
 | `kb fetch <文件>` | 抓取条目中的链接正文 |
 | `kb file <文件> --title <标题> --summary <摘要>` | 把条目移入 `raw/年/月/`；重复的内容返回 `duplicate: true` |
 | `kb index` | 重新生成 `index.md` |
-| `kb lint` | 确定性检查 |
+| `kb lint [--record]` | 确定性检查；`--record` 记下本次体检日期 |
 | `kb react` | 给已入库和抓取失败的飞书消息加表情 |
 | `kb commit -m <说明>` | 在 vault 中提交一次 |
 | `kb question --set <问题> --related <页面>` / `--clear` | 记录或清除本次追问 |
+| `kb upgrade` | 用 kit 的新版本覆盖系统文件（升级时用） |
+| `kb config --app-id --app-secret --chat-id` | 保存飞书凭证和群 ID |
 
 搜索 wiki 用 `rg`（ripgrep）。`kb` 返回 `error` 为 `not_implemented`（尚未开发）或 `not_configured`（没有配置飞书）时，跳过那一步即可。
 
@@ -179,6 +181,7 @@ git 提交说明与这条记录的标题一致。
 - **提问（ask）**：先读 `index.md` 定位页面，再读页面和它们引用的 raw，每个论断附 `[[页面]]` 链接；找不到依据就说"知识库里没有"。
 - **回顾（review）**：读最近 7 天的 log.md 和思考日志，只输出报告，不修改文件。
 - **体检（lint）**：`kb lint` 加语义检查，只出建议清单，用户逐条确认后才修改。
+- **升级与配置（setup）**：`kb upgrade` 更新系统文件；`kb config` 修改飞书配置。
 
 ### 追问
 
