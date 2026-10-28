@@ -16,6 +16,7 @@ import { writeIndex } from '../vault/indexer.mjs';
 import { SETTINGS_FILE } from '../vault/layout.mjs';
 import { readSettings } from '../vault/settings.mjs';
 import { setQuestion } from '../vault/question.mjs';
+import { configure, initVault, recordLint, upgradeVault } from '../vault/setup.mjs';
 import { vaultStatus } from '../vault/status.mjs';
 
 // Vault commands refuse to run anywhere that is not a vault (e.g. the kit repo),
@@ -97,11 +98,14 @@ export const COMMANDS = [
   },
   {
     name: 'lint',
-    usage: 'kb lint',
+    usage: 'kb lint [--record]',
     summary: 'Run deterministic checks (dead links, orphans, frontmatter, ...)',
-    options: {},
+    options: { record: { type: 'boolean' } },
     stage: 'P1',
-    run: inVault(async (ctx) => ok(await lintVault(ctx.vault))),
+    run: inVault(async (ctx) => {
+      const result = await lintVault(ctx.vault);
+      return ok(ctx.args.record ? { ...result, last_lint: await recordLint(ctx.env) } : result);
+    }),
   },
   {
     name: 'react',
@@ -131,6 +135,31 @@ export const COMMANDS = [
     options: {},
     stage: 'P1',
     run: inVault(async (ctx) => vaultStatus(ctx.vault, ctx.env)),
+  },
+  {
+    name: 'init',
+    usage: 'kb init <vault-path>',
+    summary: 'Create a new vault from vault-template with its git history outside iCloud',
+    options: {},
+    stage: 'P4',
+    run: async (ctx) => onePositional(ctx, 'vault-path') ?? initVault(ctx.positionals[0], { env: ctx.env }),
+  },
+  {
+    name: 'upgrade',
+    usage: 'kb upgrade',
+    summary: 'Replace the vault system files (CLAUDE.md, .claude/, _templates/) with this kit version',
+    options: {},
+    stage: 'P4',
+    run: inVault(async (ctx) => upgradeVault(ctx.vault)),
+  },
+  {
+    name: 'config',
+    usage: 'kb config [--app-id <id>] [--app-secret <secret>] [--chat-id <oc_...>]',
+    summary: 'Save Feishu credentials to ~/.second-brain/.env and the chat id to 我的设置.md',
+    options: { 'app-id': { type: 'string' }, 'app-secret': { type: 'string' }, 'chat-id': { type: 'string' } },
+    stage: 'P4',
+    run: inVault(async (ctx) =>
+      configure(ctx.vault, { appId: ctx.args['app-id'], appSecret: ctx.args['app-secret'], chatId: ctx.args['chat-id'] }, ctx.env)),
   },
   {
     name: 'question',

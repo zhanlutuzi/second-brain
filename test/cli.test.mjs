@@ -11,7 +11,7 @@ import { COMMANDS } from '../src/commands/index.mjs';
 const KB = fileURLToPath(new URL('../bin/kb.mjs', import.meta.url));
 const TEMPLATE = fileURLToPath(new URL('../vault-template', import.meta.url));
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status', 'question'];
+const EXPECTED = ['pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'status', 'init', 'upgrade', 'config', 'question'];
 
 // Run main() with captured stdout.
 async function run(argv, env = {}) {

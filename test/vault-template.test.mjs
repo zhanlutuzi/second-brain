@@ -96,17 +96,23 @@ describe('CLAUDE.md', () => {
 });
 
 describe('skills', () => {
-  it.each(['inbox', 'ask'])('%s skill has a name and a trigger description', (name) => {
-    const fm = frontmatter(read(`.claude/skills/${name}/SKILL.md`));
-    expect(fm.name).toBe(name);
+  const KIT = fileURLToPath(new URL('../', import.meta.url));
+  const SKILLS = [
+    ...['inbox', 'ask', 'review', 'lint', 'setup'].map((n) => [n, join(ROOT, '.claude/skills', n, 'SKILL.md')]),
+    ['setup (kit)', join(KIT, '.claude/skills/setup/SKILL.md')],
+  ];
+
+  it.each(SKILLS)('%s skill has a name and a trigger description', (label, file) => {
+    const fm = frontmatter(readFileSync(file, 'utf8'));
+    expect(fm.name).toBe(label.split(' ')[0]);
     expect(fm.description.length).toBeGreaterThan(20);
   });
 
-  it('inbox skill uses only kb subcommands that exist', async () => {
+  it.each(SKILLS)('%s skill uses only kb subcommands that exist', async (_label, file) => {
     const { COMMANDS } = await import('../src/commands/index.mjs');
     const known = new Set(COMMANDS.map((c) => c.name));
-    const used = [...read('.claude/skills/inbox/SKILL.md').matchAll(/`kb (\w+)/g)].map((m) => m[1]);
-    expect(used.length).toBeGreaterThan(5);
+    const used = [...readFileSync(file, 'utf8').matchAll(/`kb (\w+)/g)].map((m) => m[1]);
+    expect(used.length).toBeGreaterThan(0);
     for (const name of used) expect(known.has(name), name).toBe(true);
   });
 });
