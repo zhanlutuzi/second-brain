@@ -1,0 +1,202 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "has_more": false,
+    "page_token": "",
+    "items": [
+      {
+        "message_id": "om_fx_07",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "image",
+        "create_time": "1761611360000",
+        "update_time": "1761611360000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"image_key\": \"img_v3_fixture_png\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_08",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "merge_forward",
+        "create_time": "1761611420000",
+        "update_time": "1761611420000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "\"Merged and Forwarded Message\""
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_09",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611480000",
+        "update_time": "1761611480000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "cli_fixture_app",
+          "id_type": "app_id",
+          "sender_type": "app",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"已入库\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_10",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "system",
+        "create_time": "1761611490000",
+        "update_time": "1761611490000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "cli_fixture_app",
+          "id_type": "app_id",
+          "sender_type": "",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"template\": \"{from_user} 邀请 {to_chatters} 加入群聊\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_11",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "sticker",
+        "create_time": "1761611500000",
+        "update_time": "1761611500000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"file_key\": \"file_v3_fixture_sticker\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_12",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611510000",
+        "update_time": "1761611510000",
+        "deleted": true,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"撤回的消息\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_13",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611540000",
+        "update_time": "1761611540000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"@_user_1 看看这个想法：会议纪要要当天发\"}"
+        },
+        "mentions": [
+          {
+            "key": "@_user_1",
+            "id": "ou_fixture_colleague",
+            "id_type": "open_id",
+            "name": "示例同事",
+            "tenant_key": "fixture_tenant"
+          }
+        ],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_14",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611540400",
+        "update_time": "1761611540400",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"同一秒的另一条：先做最小可用版本\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      }
+    ]
+  }
+}

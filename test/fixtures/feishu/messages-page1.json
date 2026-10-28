@@ -1,0 +1,148 @@
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "has_more": true,
+    "page_token": "pt_fixture_2",
+    "items": [
+      {
+        "message_id": "om_fx_01",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611000000",
+        "update_time": "1761611000000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"这篇讲长上下文的 https://example.com/a 值得看\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_02",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611060000",
+        "update_time": "1761611060000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"两篇对比：https://example.com/b 和 https://example.org/c。\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_03",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "text",
+        "create_time": "1761611120000",
+        "update_time": "1761611120000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"text\": \"今天想到：周报应该先写结论，再写过程。\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_04",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "post",
+        "create_time": "1761611180000",
+        "update_time": "1761611180000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"title\": \"分享\", \"content\": [[{\"tag\": \"text\", \"text\": \"推荐 \"}, {\"tag\": \"a\", \"text\": \"这个工具\", \"href\": \"https://example.com/tool\"}], [{\"tag\": \"text\", \"text\": \"以后整理笔记可能用得上\"}]]}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_05",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "file",
+        "create_time": "1761611240000",
+        "update_time": "1761611240000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"file_key\": \"file_v3_fixture_pdf\", \"file_name\": \"周会纪要.pdf\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      },
+      {
+        "message_id": "om_fx_06",
+        "root_id": "",
+        "parent_id": "",
+        "thread_id": "",
+        "msg_type": "file",
+        "create_time": "1761611300000",
+        "update_time": "1761611300000",
+        "deleted": false,
+        "updated": false,
+        "chat_id": "oc_fixture_chat",
+        "sender": {
+          "id": "ou_fixture_user",
+          "id_type": "open_id",
+          "sender_type": "user",
+          "tenant_key": "fixture_tenant"
+        },
+        "body": {
+          "content": "{\"file_key\": \"file_v3_fixture_txt\", \"file_name\": \"notes.txt\"}"
+        },
+        "mentions": [],
+        "upper_message_id": ""
+      }
+    ]
+  }
+}

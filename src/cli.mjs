@@ -85,6 +85,7 @@ export async function main(argv, io = process, env = process.env) {
     positionals: parsed.positionals,
     vault: resolveVault(parsed.values.vault, env),
     env,
+    fetch: io.fetch,
   };
 
   try {

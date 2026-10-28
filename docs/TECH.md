@@ -103,12 +103,12 @@ second-brain-kit/
 
 | 子命令 | 作用 | 输出 |
 | --- | --- | --- |
-| kb pull | 拉取飞书新消息，写入 inbox/，推进游标 | 新增条目列表 |
+| kb pull [--dry-run] [--since &lt;日期&gt;] | 拉取飞书新消息，写入 inbox/，推进游标。首次运行没有游标时拉取全部历史，或从 --since 指定的日期开始 | 新增条目列表 |
 | kb fetch &lt;文件&gt; | 抓取条目中的链接正文，写回该文件 | 成功或失败及原因 |
 | kb file &lt;文件&gt; [--title &lt;标题&gt;] [--summary &lt;摘要&gt;] | 把条目移入 raw/年/月/，规范文件名；标题和一句话摘要由 skill 传入 | 新路径，或重复时指向已有的 raw 文件 |
 | kb index | 根据 wiki 页面的 frontmatter 重新生成 index.md | 页面数 |
 | kb lint | 运行确定性检查 | 问题列表 |
-| kb react &lt;结果文件&gt; | 按处理结果给飞书消息加表情 | 成功数 |
+| kb react [&lt;结果文件&gt;] | 按处理结果给飞书消息加表情。不带参数时自动判断：kb file 入库成功的消息加"成功"表情，inbox/ 中抓取失败的消息加"失败"表情 | 成功数 |
 | kb commit -m &lt;说明&gt; | 在 vault 中提交一次 | commit id |
 | kb status | 待处理条目（按时间排序）、上次体检日期、未回复的追问、个人设置 | 状态摘要 |
 | kb question --set &lt;问题&gt; [--related &lt;页面&gt;] / --clear | 记录或清除本次追问（写入 state.json） | 当前追问 |
@@ -126,9 +126,12 @@ second-brain-kit/
   - 合并转发的聊天记录：展开为文本，生成一个 thought 条目；
   - 机器人自己发的消息和系统消息：跳过。
 - **游标与去重**：条目文件名为 feishu-&lt;message_id&gt;.md，已存在就跳过。所有条目写入成功后才推进游标，中途失败重跑也不会重复或遗漏。由于 start_time 精确到秒，同一秒内的消息靠 message_id 去重。
-- **表情标记**：入库成功和失败各用一个表情，emoji_type 在"我的设置"中可配置，默认值开发时按飞书表情列表确定。
+- **表情标记**：入库成功和失败各用一个表情，emoji_type 在"我的设置"中可配置（reaction_ok、reaction_failed），默认值为 OK 和 CRY，需要在本地实测确认。kb file 入库飞书条目时（包括判为重复时），把 message_id 记入 state.json 的待标记列表；kb react 处理完就从列表移除。抓取失败的消息只标记一次。
+- **附件**：文件和图片下载到 inbox/，文件名为 feishu-&lt;message_id&gt;-&lt;原文件名&gt;，条目的 attachment 字段记录文件名，正文用 `![[文件名]]` 嵌入。kb file 入库时把附件移到 raw/assets/。文件的正文暂不转换：.md、.txt 文件直接把内容作为正文，其他格式（如 docx、pdf）只嵌入附件，由 skill 读取。
+- **一条消息多个链接**：每个链接一个条目，文件名依次为 feishu-&lt;message_id&gt;.md、feishu-&lt;message_id&gt;-2.md……；判断重复时，有 url 的条目按 url 判断，没有 url 的按 message_id 判断。
+- **暂不支持的消息类型**（语音、视频、表情包、卡片、分享群名片等）：跳过，在 kb pull 的输出中列出，由处理报告提醒用户。
 
-**实现方式**：直接调用飞书开放平台 API（官方 Node SDK），不封装飞书 CLI。理由有三点：只需要拉取、下载、加表情三个接口，范围很小；用 fixtures 做离线测试更方便；模板的使用者可以少装一个工具。适配器只负责"把消息变成 inbox/ 条目"，以后要换成 CLI 实现，也只需替换这一个模块。
+**实现方式**：直接调用飞书开放平台 API，不封装飞书 CLI，也不引入官方 Node SDK，而是用 Node 自带的 fetch 发请求（接口路径和字段已对照官方 SDK 1.76 的类型定义）。理由有三点：只需要拉取、下载、加表情三个接口，范围很小；把 fetch 换成假的实现，就能用 fixtures 完全离线测试；模板的使用者可以少装一个工具，kit 也少一串依赖。适配器只负责"把消息变成 inbox/ 条目"，以后要换成 CLI 实现，也只需替换这一个模块。
 
 **用户需要在飞书开放平台完成的配置**（一次性，约 10 分钟）：
 
@@ -269,7 +272,7 @@ lint_interval_days: 30
 
 ### inbox
 
-1. 运行 kb status。如果有未回复的追问，先把它展示给用户；用户这次没回应，就清除它，不做任何记录。kb pull、kb fetch、kb react 在对应阶段实现之前会返回 not_implemented，skill 遇到时跳过这一步。
+1. 运行 kb status。如果有未回复的追问，先把它展示给用户；用户这次没回应，就清除它，不做任何记录。kb pull、kb fetch、kb react 在对应阶段实现之前会返回 not_implemented；没有配置飞书（没有 App ID/Secret，也没有群 ID）时，kb pull 和 kb react 返回 not_configured。skill 遇到这两种情况都跳过这一步。
 2. 运行 kb pull。
 3. 对 inbox/ 中 kind 为 link、且还没抓取过的条目，逐个运行 kb fetch。
 4. 按"入库编译"的步骤处理条目，最多 batch_limit 条。抓取失败的条目留在 inbox/，不入库。
@@ -344,7 +347,7 @@ lint_interval_days: 30
 
 **待定**：
 
-- [ ] 表情回复的默认 emoji_type（开发 P2 时按飞书表情列表确定）
+- [ ] 表情回复的默认 emoji_type：暂定 OK 和 CRY，P2 本地实测确认
 - [ ] 会议记录原文能否存入个人 vault（PRD 遗留问题，不影响开发）
 - [ ] Playwright 浏览器以有头还是无头模式运行（P3 实测后决定）
 
