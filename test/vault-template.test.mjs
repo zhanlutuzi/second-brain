@@ -86,12 +86,28 @@ describe('CLAUDE.md', () => {
   });
 
   it('documents every kb subcommand and the core LLM-Wiki rules', () => {
-    for (const name of ['status', 'pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit']) {
+    for (const name of ['status', 'pull', 'fetch', 'file', 'index', 'lint', 'react', 'commit', 'question']) {
       expect(text).toContain(`kb ${name}`);
     }
     for (const rule of ['只增不改', '优先更新已有页面', '不得新建任何文件夹', '不代写']) {
       expect(text).toContain(rule);
     }
+  });
+});
+
+describe('skills', () => {
+  it.each(['inbox', 'ask'])('%s skill has a name and a trigger description', (name) => {
+    const fm = frontmatter(read(`.claude/skills/${name}/SKILL.md`));
+    expect(fm.name).toBe(name);
+    expect(fm.description.length).toBeGreaterThan(20);
+  });
+
+  it('inbox skill uses only kb subcommands that exist', async () => {
+    const { COMMANDS } = await import('../src/commands/index.mjs');
+    const known = new Set(COMMANDS.map((c) => c.name));
+    const used = [...read('.claude/skills/inbox/SKILL.md').matchAll(/`kb (\w+)/g)].map((m) => m[1]);
+    expect(used.length).toBeGreaterThan(5);
+    for (const name of used) expect(known.has(name), name).toBe(true);
   });
 });
 

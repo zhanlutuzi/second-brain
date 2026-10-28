@@ -6,7 +6,7 @@
 - **整理**：电脑开着时说一句"处理收件箱"，Claude Code 调用 `kb` 脚本拉取、抓取、归档，把内容编译进 Obsidian 里的主题页、项目页和生活页。
 - **思考**：每次处理后只问你一个问题，你的回答以原话存进"思考"。AI 不代写你的观点。
 
-> 🚧 **开发中**：当前处于 P0（骨架）阶段，`kb` 的各个子命令还没有实现。完整的安装与使用说明会在 P4 补齐。
+> 🚧 **开发中**：已完成 P1（本地闭环），可以用 vault 里的 `inbox/` 文件夹试用；飞书拉取（P2）和网页抓取（P3）还没做。正式的一键安装会在 P4 补齐。
 
 ## 两部分
 
@@ -25,6 +25,40 @@ examples/           虚构的示例收藏，用于演示和测试
 test/               vitest 单元测试，全部离线运行
 docs/               PRD、技术方案、Karpathy 原文
 ```
+
+## 试用（P1）
+
+需要 Node.js 20+、git 和 [Claude Code](https://claude.com/claude-code)。下面用一个临时的试用 vault，不会动你现有的任何笔记。
+
+1. 安装 kit，并让 `kb` 命令全局可用：
+
+   ```bash
+   git clone https://github.com/zhanlutuzi/second-brain.git ~/second-brain-kit
+   ```
+
+   ```bash
+   cd ~/second-brain-kit && npm install && npm link
+   ```
+
+2. 用模板建一个试用 vault，把 20 条示例放进收件箱：
+
+   ```bash
+   cp -R ~/second-brain-kit/vault-template ~/kb-trial && cd ~/kb-trial && mv gitignore .gitignore && cp ~/second-brain-kit/examples/inbox/* inbox/
+   ```
+
+   ```bash
+   git init -q --separate-git-dir ~/.second-brain/trial.git && git add -A && git commit -qm init
+   ```
+
+3. 在 vault 里启动 Claude Code，说"处理收件箱"：
+
+   ```bash
+   cd ~/kb-trial && claude
+   ```
+
+4. 用 Obsidian 打开 `~/kb-trial` 查看结果。之后可以直接提问，例如"读书会小程序为什么延期"。
+
+试完删除 `~/kb-trial` 和 `~/.second-brain/trial.git` 即可。
 
 ## 开发
 
