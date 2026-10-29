@@ -129,7 +129,7 @@ second-brain-kit/
   - 合并转发的聊天记录：展开为文本，生成一个 thought 条目；
   - 机器人自己发的消息和系统消息：跳过。
 - **游标与去重**：条目文件名为 feishu-&lt;message_id&gt;.md，已存在就跳过。所有条目写入成功后才推进游标，中途失败重跑也不会重复或遗漏。由于 start_time 精确到秒，同一秒内的消息靠 message_id 去重。
-- **表情标记**：入库成功和失败各用一个表情，emoji_type 在"我的设置"中可配置（reaction_ok、reaction_failed），默认值为 OK 和 CRY，需要在本地实测确认。kb file 入库飞书条目时（包括判为重复时），把 message_id 记入 state.json 的待标记列表；kb react 处理完就从列表移除。抓取失败的消息只标记一次。
+- **表情标记**：入库成功和失败各用一个表情，emoji_type 在"我的设置"中可配置（reaction_ok、reaction_failed），默认值为 OK 和 CRY（已在本地实测确认有效）。kb file 入库飞书条目时（包括判为重复时），把 message_id 记入 state.json 的待标记列表；kb react 处理完就从列表移除。抓取失败的消息只标记一次。
 - **附件**：文件和图片下载到 inbox/，文件名为 feishu-&lt;message_id&gt;-&lt;原文件名&gt;，条目的 attachment 字段记录文件名，正文用 `![[文件名]]` 嵌入。kb file 入库时把附件移到 raw/assets/。文件的正文暂不转换：.md、.txt 文件直接把内容作为正文，其他格式（如 docx、pdf）只嵌入附件，由 skill 读取。
 - **一条消息多个链接**：每个链接一个条目，文件名依次为 feishu-&lt;message_id&gt;.md、feishu-&lt;message_id&gt;-2.md……；判断重复时，有 url 的条目按 url 判断，没有 url 的按 message_id 判断。
 - **暂不支持的消息类型**（语音、视频、表情包、卡片、分享群名片等）：跳过，在 kb pull 的输出中列出，由处理报告提醒用户。
@@ -160,7 +160,7 @@ second-brain-kit/
 - Defuddle 关闭 useAsync，不向第三方接口请求内容，保证行为确定、测试离线。
 - 公众号页面的正文容器默认是隐藏的（由脚本显示），图片地址放在 data-src 里。解析前先去掉隐藏样式、把 data-src 补成 src，否则正文和图片会丢失。
 - Playwright 作为 kit 的可选依赖（固定版本），浏览器需要用户另外运行 `npx playwright install chromium` 安装；没装时第二级记为失败原因 browser_unavailable，不影响第一级。
-- 浏览器默认无头运行；"我的设置"中的 browser_headless 设为 false 可改为有头（例如需要手动登录或过验证时）。最终默认值等 P3 实测后决定。
+- 浏览器默认无头运行；"我的设置"中的 browser_headless 设为 false 可改为有头（例如需要手动登录或过验证时）。本地实测中，默认的无头模式已能成功抓取公众号文章，因此保持无头为默认值。
 - kb fetch 写回条目：成功时 fetch_status: ok，正文替换为抓到的 Markdown，并补上 title、author、published（只保留日期）、site；失败时 fetch_status: failed，fetch_error 写明每一级的原因，例如 `direct: http_403; browser: verification_page`。命令本身返回 ok: true，抓取结果看 status 字段。
 
 ### 入库编译（由 inbox skill 驱动）
@@ -343,6 +343,8 @@ lint_interval_days: 30
 | P3 抓取 | kb fetch 的两级抓取；失败判定；浏览器域名名单 | fixtures 中的 10 个常见站点 HTML 都能解析出正文；用户本地实测公众号文章抓取成功率 ≥ 80% |
 | P4 完善 | review、lint、setup skill；README；GitHub 发布 | 在一台全新的 Mac 上照着 README 操作，15 分钟内完成安装并跑通示例 |
 
+**验收记录**：P0–P4 分别通过 PR #1–#5 合入 main，v0.1.0 已于 2026-10-28 发布。用户本地实测（2026-10-29）：按 README 安装并跑通示例；飞书消息入库后能加上表情；公众号文章抓取成功。
+
 **给开发者的约定**：
 
 - 开发开始前，先把 PRD 和本文导出为 Markdown，放进 docs/；
@@ -362,9 +364,9 @@ lint_interval_days: 30
 
 **待定**：
 
-- [ ] 表情回复的默认 emoji_type：暂定 OK 和 CRY，P2 本地实测确认
+- [x] 表情回复的默认 emoji_type：OK 和 CRY，本地实测有效
 - [ ] 会议记录原文能否存入个人 vault（PRD 遗留问题，不影响开发）
-- [ ] Playwright 浏览器以有头还是无头模式运行：暂定无头，可用 browser_headless 切换（P3 实测后决定默认值）
+- [x] Playwright 浏览器以有头还是无头模式运行：默认无头，本地实测能抓取公众号文章；需要手动登录或过验证时把 browser_headless 设为 false
 
 ## Sources
 
