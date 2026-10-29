@@ -4,12 +4,16 @@ import { existsSync } from 'node:fs';
 import { chmod, cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { mask, parseEnvFile } from '../feishu/config.mjs';
 import { migrateLegacyState, paths, readState, writeState } from '../state.mjs';
 import { localDate } from '../util/date.mjs';
+import { parseMarkdown } from './frontmatter.mjs';
 import { SETTINGS_FILE } from './layout.mjs';
 
 export const TEMPLATE = fileURLToPath(new URL('../../vault-template', import.meta.url));
+export const KIT_DIR = fileURLToPath(new URL('../../', import.meta.url));
 
 // Everything under these paths belongs to the kit and is replaced on upgrade.
 export const SYSTEM_PATHS = ['CLAUDE.md', '.claude', '_templates'];
@@ -72,6 +76,45 @@ async function removeGitPointer(vault) {
   return true;
 }
 
+// User files are only ever extended: settings keys the user does not have yet are
+// appended with the template's line (default value and comment); existing values stay.
+export function addMissingSettings(current, template) {
+  const have = parseMarkdown(current).data;
+  const block = template.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+  const lines = block.split('\n').filter((l) => /^[A-Za-z_][\w-]*:/.test(l) && !(l.split(':')[0] in have));
+  if (lines.length === 0 || !current.startsWith('---')) return { text: current, added: [] };
+  const end = current.indexOf('\n---', 3);
+  return { text: `${current.slice(0, end)}\n${lines.join('\n')}${current.slice(end)}`, added: lines.map((l) => l.split(':')[0]) };
+}
+
+export function addMissingIgnores(current, template) {
+  const have = new Set(current.split('\n').map((l) => l.trim()));
+  const missing = template.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#') && !have.has(l));
+  if (missing.length === 0) return { text: current, added: [] };
+  const base = current.endsWith('\n') || current === '' ? current : `${current}\n`;
+  return { text: `${base}\n# Added by kb upgrade\n${missing.join('\n')}\n`, added: missing };
+}
+
+async function extendUserFiles(vault, template) {
+  const added = [];
+  const settingsFile = join(vault, SETTINGS_FILE);
+  if (existsSync(settingsFile)) {
+    const r = addMissingSettings(await readFile(settingsFile, 'utf8'), await readFile(join(template, SETTINGS_FILE), 'utf8'));
+    if (r.added.length) {
+      await writeFile(settingsFile, r.text, 'utf8');
+      added.push(...r.added.map((k) => `${SETTINGS_FILE}: ${k}`));
+    }
+  }
+  const ignoreFile = join(vault, '.gitignore');
+  const current = existsSync(ignoreFile) ? await readFile(ignoreFile, 'utf8') : '';
+  const r = addMissingIgnores(current, await readFile(join(template, 'gitignore'), 'utf8'));
+  if (r.added.length) {
+    await writeFile(ignoreFile, r.text, 'utf8');
+    added.push(...r.added.map((l) => `.gitignore: ${l}`));
+  }
+  return added;
+}
+
 export async function upgradeVault(vault, { template = TEMPLATE, env = process.env } = {}) {
   const changed = [];
   const removed = [];
@@ -101,7 +144,44 @@ export async function upgradeVault(vault, { template = TEMPLATE, env = process.e
     }
     for (const f of before.keys()) if (!after.includes(f)) removed.push(`${sys}/${f}`);
   }
-  return { ok: true, changed, removed, migrated };
+  const added = await extendUserFiles(vault, template);
+  return { ok: true, changed, removed, added, migrated };
+}
+
+const execAsync = promisify(execFile);
+const defaultRun = async (cmd, args, opts) => (await execAsync(cmd, args, { maxBuffer: 16 * 1024 * 1024, ...opts })).stdout;
+
+// kb upgrade: update the kit (git pull + npm install), then let the *new* code
+// update the vault by running `kb upgrade --no-pull` in a fresh process.
+export async function upgradeAll(vault, { env = process.env, kitDir = KIT_DIR, run = defaultRun } = {}) {
+  const git = (...args) => run('git', ['-C', kitDir, ...args], { env });
+  let before;
+  try {
+    before = (await git('rev-parse', '--short', 'HEAD')).trim();
+  } catch {
+    return { ok: false, error: 'kit_not_git', message: `${kitDir} is not a git clone; download the new version yourself, then run: kb upgrade --no-pull` };
+  }
+  try {
+    await git('pull', '--ff-only', '--quiet');
+  } catch (err) {
+    return { ok: false, error: 'kit_update_failed', message: `git pull failed in ${kitDir}: ${String(err.stderr || err.message).trim()}. Resolve it (e.g. local changes), then run kb upgrade again.` };
+  }
+  const after = (await git('rev-parse', '--short', 'HEAD')).trim();
+  if (after !== before) {
+    try {
+      await run('npm', ['install', '--no-audit', '--no-fund', '--silent'], { cwd: kitDir, env });
+    } catch (err) {
+      return { ok: false, error: 'kit_update_failed', message: `npm install failed in ${kitDir}: ${String(err.stderr || err.message).trim()}` };
+    }
+  }
+  const out = await run(process.execPath, [join(kitDir, 'bin', 'kb.mjs'), 'upgrade', '--no-pull', '--vault', vault], { env }).catch((err) => err.stdout ?? '');
+  let result;
+  try {
+    result = JSON.parse(String(out).trim().split('\n').pop());
+  } catch {
+    return { ok: false, error: 'upgrade_failed', message: 'the new version did not report a result' };
+  }
+  return { ...result, kit: { from: before, to: after, updated: after !== before } };
 }
 
 // Replace one top-level key in the settings frontmatter, keeping everything else as written.
