@@ -7,13 +7,13 @@ import { readState, writeState } from '../state.mjs';
 import { inboxEntries } from '../vault/status.mjs';
 import { FeishuError } from './client.mjs';
 
-export async function queueReaction(messageId, env) {
-  const state = await readState(env);
+export async function queueReaction(vault, messageId, env) {
+  const state = await readState(vault, env);
   const feishu = state.feishu ?? {};
   const pending = feishu.pending_ok ?? [];
   if (pending.includes(messageId)) return;
   state.feishu = { ...feishu, pending_ok: [...pending, messageId] };
-  await writeState(state, env);
+  await writeState(vault, state, env);
 }
 
 async function failedInInbox(vault) {
@@ -22,7 +22,7 @@ async function failedInInbox(vault) {
 }
 
 export async function pendingReactions(vault, env, resultFile) {
-  const state = await readState(env);
+  const state = await readState(vault, env);
   const feishu = state.feishu ?? {};
   const ok = new Set(feishu.pending_ok ?? []);
   const failedNow = await failedInInbox(vault);
@@ -67,7 +67,7 @@ export async function react(vault, { client, env, settings, resultFile }) {
     if (reacted && !result.errors.some((e) => e.message_id === id)) result.reacted_failed++;
   }
 
-  const state = await readState(env);
+  const state = await readState(vault, env);
   const feishu = state.feishu ?? {};
   const stillFailed = new Set(failedNow);
   state.feishu = {
@@ -76,6 +76,6 @@ export async function react(vault, { client, env, settings, resultFile }) {
     // Forget failures that left the inbox, so a re-sent message can be marked again.
     marked_failed: [...new Set([...(feishu.marked_failed ?? []), ...markedNow])].filter((id) => stillFailed.has(id)),
   };
-  await writeState(state, env);
+  await writeState(vault, state, env);
   return result;
 }

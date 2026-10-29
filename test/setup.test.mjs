@@ -13,7 +13,6 @@ import { vaultStatus } from '../src/vault/status.mjs';
 
 let tmp;
 let env;
-const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 
 beforeEach(async () => {
   tmp = await mkdtemp(join(tmpdir(), 'kb-setup-'));
@@ -27,21 +26,18 @@ beforeEach(async () => {
 afterEach(() => rm(tmp, { recursive: true, force: true }));
 
 describe('kb init', () => {
-  it('creates a lint-clean vault whose git history lives in ~/.second-brain', async () => {
+  it('creates a lint-clean vault with no git inside and shared state in .kb/', async () => {
     const vault = join(tmp, 'iCloud', '我的第二大脑');
     const r = await initVault(vault, { env, now: new Date(2026, 9, 28) });
-    expect(r).toEqual({ ok: true, vault, git_dir: join(tmp, 'home', 'vault.git') });
+    expect(r).toEqual({ ok: true, vault });
 
     expect(existsSync(join(vault, '.gitignore'))).toBe(true);
     expect(existsSync(join(vault, 'gitignore'))).toBe(false);
-    // .git is a pointer file, not a directory, so iCloud never syncs history.
-    expect(statSync(join(vault, '.git')).isFile()).toBe(true);
-    expect(await readFile(join(vault, '.git'), 'utf8')).toContain(join(tmp, 'home', 'vault.git'));
-    expect(git(vault, 'log', '--format=%s')).toBe('[2026-10-28] 初始化知识库');
-    expect(git(vault, 'status', '--porcelain')).toBe('');
+    expect(existsSync(join(vault, '.git'))).toBe(false);
+    expect(existsSync(join(tmp, 'home', 'vault.git'))).toBe(false);
 
     expect((await lintVault(vault)).errors).toBe(0);
-    expect(await readState(env)).toEqual({ last_lint: '2026-10-28' });
+    expect(await readState(vault, env)).toEqual({ last_lint: '2026-10-28' });
     expect((await vaultStatus(vault, env, new Date(2026, 9, 29))).lint_due).toBe(false);
   });
 
@@ -53,13 +49,11 @@ describe('kb init', () => {
     expect(await readFile(join(vault, '.obsidian', 'app.json'), 'utf8')).toBe('{"mine":true}');
   });
 
-  it('refuses non-empty folders and a second vault on the same git dir', async () => {
+  it('refuses non-empty folders', async () => {
     const full = join(tmp, 'full');
     await mkdir(full);
     await writeFile(join(full, 'note.md'), 'x');
     expect(await initVault(full, { env })).toMatchObject({ ok: false, error: 'not_empty' });
-    expect((await initVault(join(tmp, 'a'), { env })).ok).toBe(true);
-    expect(await initVault(join(tmp, 'b'), { env })).toMatchObject({ ok: false, error: 'git_dir_exists' });
   });
 });
 
@@ -72,7 +66,6 @@ describe('kb upgrade', () => {
     // A newer kit: changed rules, a new skill, a removed template.
     template = join(tmp, 'kit-next');
     execFileSync('cp', ['-R', join(vault), template]);
-    await rm(join(template, '.git'));
     await writeFile(join(template, 'gitignore'), '');
     const claude = await readFile(join(template, 'CLAUDE.md'), 'utf8');
     await writeFile(join(template, 'CLAUDE.md'), claude.replace('# 第二大脑 · 规则', '# 第二大脑 · 规则 v2'));
@@ -86,8 +79,8 @@ describe('kb upgrade', () => {
     await writeFile(join(vault, '主题/我的页面.md'), '我的内容');
     const settings = await readFile(join(vault, '我的设置.md'), 'utf8');
 
-    const r = await upgradeVault(vault, { template });
-    expect(r).toEqual({ ok: true, changed: ['CLAUDE.md', '.claude/skills/new/SKILL.md'], removed: ['_templates/生活.md'] });
+    const r = await upgradeVault(vault, { template, env });
+    expect(r).toEqual({ ok: true, changed: ['CLAUDE.md', '.claude/skills/new/SKILL.md'], removed: ['_templates/生活.md'], migrated: [] });
 
     const claude = await readFile(join(vault, 'CLAUDE.md'), 'utf8');
     expect(claude).toContain('# 第二大脑 · 规则 v2');
@@ -96,7 +89,24 @@ describe('kb upgrade', () => {
     expect(await readFile(join(vault, '我的设置.md'), 'utf8')).toBe(settings);
     expect(existsSync(join(vault, '_templates/生活.md'))).toBe(false);
 
-    expect(await upgradeVault(vault, { template })).toEqual({ ok: true, changed: [], removed: [] });
+    expect(await upgradeVault(vault, { template, env })).toEqual({ ok: true, changed: [], removed: [], migrated: [] });
+  });
+
+  it('migrates a v0.1.0 vault: removes the .git pointer and moves the state', async () => {
+    await writeFile(join(vault, '.git'), `gitdir: ${join(tmp, 'home', 'vault.git')}\n`);
+    await mkdir(join(tmp, 'home'), { recursive: true });
+    await writeFile(join(tmp, 'home', 'state.json'), JSON.stringify({ feishu: { cursor_time: 9, cursor_ids: ['om_old'] } }));
+    const r = await upgradeVault(vault, { template, env });
+    expect(r.migrated).toHaveLength(2);
+    expect(existsSync(join(vault, '.git'))).toBe(false);
+    expect((await readState(vault, env)).feishu).toEqual({ cursor_time: 9, cursor_ids: ['om_old'] });
+    expect(existsSync(join(tmp, 'home', 'state.json.migrated'))).toBe(true);
+  });
+
+  it('never removes a real .git directory', async () => {
+    await mkdir(join(vault, '.git'));
+    expect((await upgradeVault(vault, { template, env })).migrated).toEqual([]);
+    expect(existsSync(join(vault, '.git'))).toBe(true);
   });
 
   it('merges CLAUDE.md around the personal marker', () => {

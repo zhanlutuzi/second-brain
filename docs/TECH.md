@@ -53,7 +53,7 @@ flowchart TB
 | 位置 | ~/second-brain-kit | ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/我的第二大脑 |
 | 包含 | 脚本、依赖、vault 模板、测试、文档 | 规则、skill、内容 |
 | 升级 | git pull | 运行 /setup --upgrade，从 kit 复制新的系统文件 |
-| 版本记录 | GitHub | 本地 git，历史存在 ~/.second-brain/vault.git |
+| 版本记录 | GitHub | 可选（默认关闭）：每台电脑在本机 ~/.second-brain/vault.git 各自记录 |
 
 ### kit 仓库结构
 
@@ -85,7 +85,7 @@ second-brain-kit/
 │   ├── settings.json          预授权 kb、git 命令
 │   └── skills/                inbox / ask / review / lint / setup
 ├── .obsidian/
-├── .git                       一个文本文件，指向 ~/.second-brain/vault.git
+├── .kb/state.json             处理进度（游标、待标记表情、追问、体检日期），随 iCloud 同步
 ├── CLAUDE.md                  规则（系统文件）
 ├── 我的设置.md                 个人配置
 ├── index.md   log.md
@@ -95,7 +95,9 @@ second-brain-kit/
 
 **系统文件与用户文件的边界**：CLAUDE.md、.claude/、_templates/ 属于系统文件，升级时会被覆盖；其余都属于用户文件，升级时绝不改动。CLAUDE.md 末尾留一个"个人补充"区块，升级时原样保留。
 
-**状态与密钥不放进 vault**：机器状态（游标等）放在 ~/.second-brain/state.json，飞书 App Secret 放在 ~/.second-brain/.env。它们不该同步到手机，也不该进入版本记录。
+**处理进度跟着 vault 走，密钥留在本机**：游标、待标记表情的消息、追问、体检日期放在 vault 的 .kb/state.json，随 iCloud 同步，任何一台电脑都能接着处理（以点开头的文件夹 Obsidian 不显示）。飞书 App Secret 放在每台电脑的 ~/.second-brain/.env，浏览器登录状态放在 ~/.second-brain/browser，它们不进 iCloud。
+
+**多台电脑**：任何一台装了 kit 的电脑都可以处理收件箱。约定同一时间只有一台在处理：kb pull 会在 .kb/state.json 记下"哪台电脑、什么时候"处理，另一台电脑在 10 分钟内运行 kb status 时会收到提醒（other_machine_recent），skill 会建议等 iCloud 同步完再处理。iCloud 的"优化 Mac 储存空间"可能让文件只留在云端，建议对 vault 所在文件夹选择"保留下载"。
 
 ## 模块设计
 
@@ -109,10 +111,10 @@ second-brain-kit/
 | kb index | 根据 wiki 页面的 frontmatter 重新生成 index.md | 页面数 |
 | kb lint [--record] | 运行确定性检查；--record 把今天记为上次体检日期（lint skill 收尾时使用） | 问题列表 |
 | kb react [&lt;结果文件&gt;] | 按处理结果给飞书消息加表情。不带参数时自动判断：kb file 入库成功的消息加"成功"表情，inbox/ 中抓取失败的消息加"失败"表情 | 成功数 |
-| kb commit -m &lt;说明&gt; | 在 vault 中提交一次 | commit id |
+| kb commit -m &lt;说明&gt; | 在 vault 中提交一次；"我的设置"中 version_history 为 false（默认）时返回 not_configured，skill 跳过 | commit id |
 | kb status | 待处理条目（按时间排序）、上次体检日期、未回复的追问、个人设置 | 状态摘要 |
-| kb init &lt;vault 路径&gt; | 首次安装：复制 vault-template，用 separate-git-dir 初始化 git 并做第一次提交 | vault 和 git 目录 |
-| kb upgrade | 用 kit 中的新版本覆盖 vault 的系统文件，保留 CLAUDE.md 的个人补充 | 更新的文件列表 |
+| kb init &lt;vault 路径&gt; | 首次安装：把 vault-template 复制到一个空目录 | vault 路径 |
+| kb upgrade | 用 kit 中的新版本覆盖 vault 的系统文件，保留 CLAUDE.md 的个人补充；同时迁移旧版本的数据（见"版本控制、同步与密钥"） | 更新的文件列表 |
 | kb config [--app-id] [--app-secret] [--chat-id] | 写入飞书凭证（~/.second-brain/.env，权限 600）和群 ID（我的设置） | 已写入的项（Secret 打码） |
 | kb question --set &lt;问题&gt; [--related &lt;页面&gt;] / --clear | 记录或清除本次追问（写入 state.json） | 当前追问 |
 
@@ -239,11 +241,12 @@ tags: [AI, 知识管理]
 | 生活 | 一句话 · 流程或要点 · 材料与链接 · 经验 · 相关 |
 | 思考 | 按日期排列的原话，每条后附关联页面链接；只追加，不修改 |
 
-### 状态文件 ~/.second-brain/state.json
+### 状态文件 .kb/state.json（在 vault 里）
 
 ```json
 {
-  "feishu": { "cursor_time": 1761611411, "last_message_id": "om_xxx" },
+  "feishu": { "cursor_time": 1761611411, "cursor_ids": ["om_xxx"], "pending_ok": [], "marked_failed": [] },
+  "last_run": { "machine": "示例的 MacBook", "at": "2026-10-28T09:41:00+08:00" },
   "last_lint": "2026-10-01",
   "pending_question": { "asked_at": "2026-10-28", "text": "...", "related": "[[RAG 与长上下文]]" }
 }
@@ -312,9 +315,9 @@ lint_interval_days: 30
 
 首次安装时：
 
-1. 检查 Node 20+ 和 git，在 kit 目录执行 npm install；
-2. 询问 vault 放在哪里，默认是 iCloud 的 Obsidian 目录；
-3. 运行 kb init，把 vault-template 复制过去，用 separate-git-dir 初始化 git（目标目录必须为空，或只有 Obsidian 自己的 .obsidian/）；
+1. 检查 Node 20+，在 kit 目录执行 npm install；
+2. 询问是新建 vault，还是使用另一台电脑已经建好、通过 iCloud 同步过来的 vault；新建时询问放在哪里，默认是 iCloud 的 Obsidian 目录；
+3. 新建时运行 kb init，把 vault-template 复制过去（目标目录必须为空，或只有 Obsidian 自己的 .obsidian/）；使用已有 vault 时跳过这一步；
 4. 引导用户填写飞书 App ID、App Secret 和群 ID，用 kb config 写入 ~/.second-brain/.env 和"我的设置"（可以跳过，只用 inbox/ 文件夹）；
 5. 运行一次 kb pull --dry-run，测试连通性；
 6. 在 ~/.zshrc 中加一个 kb-open 函数，用来进入 vault 目录并启动 Claude Code。
@@ -323,13 +326,14 @@ lint_interval_days: 30
 
 ## 版本控制、同步与密钥
 
-- **vault 的 git**：用 git init --separate-git-dir ~/.second-brain/vault.git 初始化。iCloud 里只有一个指向该目录的 .git 文本文件，历史记录不进入 iCloud。
-- **vault 的 .gitignore**：.obsidian/workspace*.json、.obsidian/cache、.DS_Store、inbox/ 下的二进制附件。
+- **版本记录是可选的**（"我的设置"中 version_history，默认 false）。打开后，每台电脑在本机 ~/.second-brain/vault.git 记录自己的历史：kb commit 用 `git --git-dir ~/.second-brain/vault.git --work-tree <vault>` 提交，vault 里不放任何 .git 文件，所以不会被 iCloud 同步到另一台电脑。两台电脑的历史各自独立、互不合并；在一台电脑上回滚时，另一台电脑同步过来的修改也会被回滚，回滚前要确认。不打开版本记录时，可以用 Obsidian 自带的核心插件"文件恢复"找回旧版本。
+- **从旧版本升级**：v0.1.0 在 vault 里放了一个指向 ~/.second-brain/vault.git 的 .git 文件，状态放在 ~/.second-brain/state.json。kb upgrade 会删除这个 .git 文件（历史仍在 ~/.second-brain/vault.git，打开 version_history 后继续使用），并把本机的 state.json 合并进 vault 的 .kb/state.json；原文件改名为 state.json.migrated。
+- **vault 的 .gitignore**：.obsidian/workspace*.json、.obsidian/cache、.DS_Store、.kb/、inbox/ 下的二进制附件。
 - **kit 的 .gitignore**：node_modules/、.env、任何 vault 内容；只有 examples/ 中的示例数据可以提交。
-- **提交粒度**：每次 inbox 或 lint 结束时提交一次，提交说明与 log.md 的标题一致，方便对照和回滚。
+- **提交粒度**（打开版本记录时）：每次 inbox 或 lint 结束时提交一次，提交说明与 log.md 的标题一致，方便对照和回滚。
 - **密钥**：App Secret 只保存在 ~/.second-brain/.env，文件权限设为 600；脚本在日志和输出中一律打码。
 - **权限预授权**：vault 的 .claude/settings.json 放行 kb *、git 和 rg 命令，减少日常运行时的确认弹窗；删除文件不在放行范围内。
-- **iCloud 冲突**：手机和电脑同时修改同一页面时，iCloud 可能生成"文件名 2.md"这类副本。kb lint 会检测这类文件，并提示用户合并。
+- **iCloud 冲突**：手机和电脑同时修改同一页面时，iCloud 可能生成"文件名 2.md"这类副本。kb lint 会检测这类文件（包括 .kb/ 里的状态文件副本），并提示用户合并。
 
 ## 开发阶段与验收标准
 

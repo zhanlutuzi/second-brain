@@ -6,6 +6,9 @@
 # macOS
 .DS_Store
 
+# Processing state (synced by iCloud, not versioned)
+.kb/
+
 # Binary attachments waiting in inbox/ (they are filed into raw/assets/ when processed)
 inbox/*
 !inbox/*.md

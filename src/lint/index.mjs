@@ -152,6 +152,17 @@ export async function lintVault(vault) {
     }
   }
 
+  // The shared state file can get iCloud conflict copies too ("state 2.json").
+  try {
+    for (const name of await readdir(join(vault, '.kb'))) {
+      if (/^state \d+\.json$/.test(name)) {
+        add('warning', 'conflict_copy', `.kb/${name}`, 'Conflict copy of the processing state: two computers processed at the same time; keep .kb/state.json and delete this copy');
+      }
+    }
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+
   const order = { error: 0, warning: 1 };
   issues.sort((a, b) => order[a.level] - order[b.level] || a.file.localeCompare(b.file) || a.code.localeCompare(b.code));
   const errors = issues.filter((i) => i.level === 'error').length;

@@ -2,7 +2,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { readState } from '../state.mjs';
+import { machineName, readState } from '../state.mjs';
 import { daysBetween, localDate } from '../util/date.mjs';
 import { parseMarkdown } from './frontmatter.mjs';
 import { listPages, relPath, stem, walk } from './layout.mjs';
@@ -41,9 +41,11 @@ export async function inboxEntries(vault) {
   return { entries, attachments };
 }
 
+export const RECENT_MINUTES = 10;
+
 export async function vaultStatus(vault, env = process.env, now = new Date()) {
   const settings = await readSettings(vault);
-  const state = await readState(env);
+  const state = await readState(vault, env);
   const { entries, attachments } = await inboxEntries(vault);
   const pages = await listPages(vault);
   const today = localDate(now);
@@ -51,6 +53,11 @@ export async function vaultStatus(vault, env = process.env, now = new Date()) {
   const lastLint = state.last_lint ?? null;
   const daysSinceLint = lastLint ? daysBetween(lastLint, today) : null;
   const lintDue = lastLint ? daysSinceLint > settings.lint_interval_days : pages.length > 0;
+
+  // Another computer processed the vault moments ago: iCloud may still be syncing.
+  const lastRun = state.last_run ?? null;
+  const minutesAgo = lastRun ? Math.floor((now.getTime() - Date.parse(lastRun.at)) / 60_000) : null;
+  const otherMachineRecent = Boolean(lastRun && lastRun.machine !== machineName(env) && minutesAgo !== null && minutesAgo < RECENT_MINUTES);
 
   return {
     ok: true,
@@ -68,6 +75,9 @@ export async function vaultStatus(vault, env = process.env, now = new Date()) {
     days_since_lint: daysSinceLint,
     lint_due: lintDue,
     pending_question: state.pending_question ?? null,
+    machine: machineName(env),
+    last_run: lastRun,
+    other_machine_recent: otherMachineRecent,
     settings: {
       projects: settings.projects,
       life_categories: settings.life_categories,

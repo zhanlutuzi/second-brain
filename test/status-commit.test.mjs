@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readState, writeState } from '../src/state.mjs';
@@ -37,7 +37,7 @@ describe('kb status', () => {
   it('reports when lint is due', async () => {
     await put(v.vault, '主题/甲.md', page());
     expect((await vaultStatus(v.vault, v.env)).lint_due).toBe(true);
-    await writeState({ last_lint: '2026-10-01' }, v.env);
+    await writeState(v.vault, { last_lint: '2026-10-01' }, v.env);
     expect(await vaultStatus(v.vault, v.env, new Date(2026, 9, 31))).toMatchObject({ days_since_lint: 30, lint_due: false });
     expect(await vaultStatus(v.vault, v.env, new Date(2026, 10, 1))).toMatchObject({ days_since_lint: 31, lint_due: true });
   });
@@ -49,53 +49,72 @@ describe('kb question', () => {
   });
 
   it('sets, shows and clears the pending question without touching other state', async () => {
-    await writeState({ last_lint: '2026-10-01' }, v.env);
-    const set = await setQuestion({ text: '你同意它哪一点？', related: '[[甲]]' }, v.env, new Date(2026, 9, 28));
+    await writeState(v.vault, { last_lint: '2026-10-01' }, v.env);
+    const set = await setQuestion(v.vault, { text: '你同意它哪一点？', related: '[[甲]]' }, v.env, new Date(2026, 9, 28));
     expect(set.pending_question).toEqual({ asked_at: '2026-10-28', text: '你同意它哪一点？', related: '[[甲]]' });
     expect((await vaultStatus(v.vault, v.env)).pending_question.text).toBe('你同意它哪一点？');
-    expect(await setQuestion({ clear: true }, v.env)).toEqual({ ok: true, pending_question: null });
-    expect(await readState(v.env)).toEqual({ last_lint: '2026-10-01' });
+    expect(await setQuestion(v.vault, { clear: true }, v.env)).toEqual({ ok: true, pending_question: null });
+    expect(await readState(v.vault, v.env)).toEqual({ last_lint: '2026-10-01' });
   });
 
   it('rejects empty or contradictory arguments', async () => {
-    expect((await setQuestion({}, v.env)).error).toBe('invalid_arguments');
-    expect((await setQuestion({ text: 'x', clear: true }, v.env)).error).toBe('invalid_arguments');
+    expect((await setQuestion(v.vault, {}, v.env)).error).toBe('invalid_arguments');
+    expect((await setQuestion(v.vault, { text: 'x', clear: true }, v.env)).error).toBe('invalid_arguments');
+  });
+});
+
+describe('another computer', () => {
+  beforeEach(async () => {
+    v = await makeVault();
+  });
+
+  it('warns when another computer processed the vault in the last 10 minutes', async () => {
+    await writeState(v.vault, { last_run: { machine: '另一台 Mac', at: '2026-10-28T09:00:00+08:00' } }, v.env);
+    const at = (min) => new Date(Date.parse('2026-10-28T09:00:00+08:00') + min * 60_000);
+    expect(await vaultStatus(v.vault, { ...v.env, KB_MACHINE: '这台 Mac' }, at(5))).toMatchObject({ machine: '这台 Mac', other_machine_recent: true });
+    expect((await vaultStatus(v.vault, { ...v.env, KB_MACHINE: '这台 Mac' }, at(11))).other_machine_recent).toBe(false);
+    expect((await vaultStatus(v.vault, { ...v.env, KB_MACHINE: '另一台 Mac' }, at(5))).other_machine_recent).toBe(false);
+  });
+
+  it('shares the cursor through the vault, not the computer', async () => {
+    await writeState(v.vault, { feishu: { cursor_time: 42 } }, v.env);
+    expect((await readState(v.vault, { SECOND_BRAIN_HOME: join(v.tmp, 'second-computer') })).feishu.cursor_time).toBe(42);
   });
 });
 
 describe('kb commit', () => {
   const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
-  const initRepo = (dir) => {
-    git(dir, 'init', '--quiet');
-    git(dir, 'config', 'user.name', 'Test');
-    git(dir, 'config', 'user.email', 'test@example.com');
-  };
+  const ON = { version_history: true };
 
   beforeEach(async () => {
     v = await makeVault();
+    Object.assign(process.env, { GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.com', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.com' });
   });
 
-  it('commits all changes once and reports nothing to commit afterwards', async () => {
-    initRepo(v.vault);
-    const r = await commitVault(v.vault, '[2026-10-28] 处理收件箱 | 入库 0，失败 0');
+  it('does nothing while version_history is off (the default)', async () => {
+    expect(await commitVault(v.vault, 'x', { env: v.env, settings: {} })).toMatchObject({ ok: false, error: 'not_configured' });
+    expect(existsSync(join(v.tmp, 'home', 'vault.git'))).toBe(false);
+  });
+
+  it('keeps history in ~/.second-brain/vault.git and nothing git-related in the vault', async () => {
+    const r = await commitVault(v.vault, '[2026-10-28] 处理收件箱 | 入库 0，失败 0', { env: v.env, settings: ON });
     expect(r).toMatchObject({ ok: true, committed: true });
     expect(r.commit).toMatch(/^[0-9a-f]{7,}$/);
-    expect(git(v.vault, 'log', '-1', '--format=%s')).toBe('[2026-10-28] 处理收件箱 | 入库 0，失败 0');
-    expect(await commitVault(v.vault, 'again')).toMatchObject({ ok: true, committed: false });
+    expect(existsSync(join(v.vault, '.git'))).toBe(false);
+    const gitDir = join(v.tmp, 'home', 'vault.git');
+    expect(git(v.vault, '--git-dir', gitDir, 'log', '-1', '--format=%s')).toBe('[2026-10-28] 处理收件箱 | 入库 0，失败 0');
+    expect(git(v.vault, '--git-dir', gitDir, '--work-tree', v.vault, 'ls-files')).not.toContain('.kb/');
+    expect(await commitVault(v.vault, 'again', { env: v.env, settings: ON })).toMatchObject({ ok: true, committed: false });
   });
 
-  it('works with a separate git dir like the real vault', async () => {
-    git(v.vault, 'init', '--quiet', '--separate-git-dir', join(v.tmp, 'vault.git'));
-    git(v.vault, 'config', 'user.name', 'Test');
-    git(v.vault, 'config', 'user.email', 'test@example.com');
-    expect(await commitVault(v.vault, 'first')).toMatchObject({ ok: true, committed: true });
-  });
-
-  it('refuses to commit outside a vault repository', async () => {
-    expect(await commitVault(v.vault, 'x')).toMatchObject({ ok: false });
-    initRepo(v.tmp);
-    await mkdir(join(v.tmp, 'other'), { recursive: true });
-    expect(await commitVault(v.vault, 'x')).toMatchObject({ ok: false, error: 'vault_not_git_root' });
-    expect(await commitVault(v.vault, '  ')).toMatchObject({ ok: false, error: 'missing_message' });
+  it('refuses a git dir that belongs to another vault, and an empty message', async () => {
+    await commitVault(v.vault, 'first', { env: v.env, settings: ON });
+    const other = await makeVault();
+    try {
+      expect(await commitVault(other.vault, 'x', { env: v.env, settings: ON })).toMatchObject({ ok: false, error: 'git_dir_in_use' });
+    } finally {
+      await other.cleanup();
+    }
+    expect(await commitVault(v.vault, '  ', { env: v.env, settings: ON })).toMatchObject({ ok: false, error: 'missing_message' });
   });
 });

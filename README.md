@@ -23,9 +23,9 @@ flowchart LR
 | 是什么 | 脚本、规则模板、测试、文档 | 一个 Obsidian vault |
 | 放在哪 | `~/second-brain-kit` | 默认放在 iCloud 的 Obsidian 文件夹，手机上也能看 |
 | 内容 | 只有系统文件和虚构的示例数据 | 你的全部个人内容，**永远不会**进入本仓库 |
-| 版本记录 | GitHub | 本地 git，历史存在 `~/.second-brain/vault.git`，不进 iCloud |
+| 版本记录 | GitHub | 可选，默认关闭（见下文） |
 
-飞书的 App Secret 和处理进度保存在 `~/.second-brain/`，既不在 vault 里，也不会同步到手机。
+处理进度（飞书游标、待加的表情、追问、体检日期）存在 vault 的 `.kb/state.json` 里，随 iCloud 同步，所以**任何一台装了 kit 的电脑都能接着处理收件箱**，不会重复拉取。飞书的 App Secret 和浏览器登录状态只存在每台电脑的 `~/.second-brain/`，不进 iCloud。
 
 ## 安装（约 15 分钟）
 
@@ -57,9 +57,9 @@ flowchart LR
    ```
 
 3. 输入 `/setup`，按提示一问一答。它会依次：
-   - 检查 Node 和 git，安装依赖，让 `kb` 命令可用；
+   - 检查 Node，安装依赖，让 `kb` 命令可用；
    - 安装抓取网页用的 Chromium；
-   - 创建你的 vault；
+   - 新建你的 vault，或者接入另一台电脑上已经建好的 vault；
    - 配置飞书（可以跳过，以后在 vault 里说"配置飞书"再接入）；
    - 在 `~/.zshrc` 里加一个 `kb-open` 命令；
    - 用 20 条虚构的示例数据试跑一次。
@@ -101,7 +101,19 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 
 抓取不到的链接（例如需要登录的页面）会在报告里列出来。用 [Obsidian Web Clipper](https://obsidian.md/clipper) 剪藏，保存位置设为 vault 的 `inbox/` 文件夹，下次处理时会一并入库。
 
-每次处理都是一次 git 提交，随时可以回滚。
+## 两台电脑
+
+在第二台电脑上同样 clone kit、运行 `/setup`，选择"使用已有的 vault"，再填一次飞书凭证即可。之后两台电脑都能说"处理收件箱"。
+
+- 不要两台同时处理。另一台电脑 10 分钟内刚处理过时，会提醒你等 iCloud 同步完再处理。
+- 建议在 Finder 里右键 vault 文件夹，选"保留下载"，避免 iCloud 把文件只留在云端。
+- 升级时，两台电脑都要在 kit 目录 `git pull`；vault 里的系统文件只需要在其中一台上说"升级"，会随 iCloud 同步过去。
+
+## 版本记录（可选）
+
+默认不记录版本。想找回某个页面的旧版本，可以打开 Obsidian 的核心插件"文件恢复"（设置 → 核心插件 → 文件恢复）。
+
+想要每次处理都留一个 git 提交，把 `我的设置.md` 里的 `version_history` 改成 `true`。历史存在每台电脑本机的 `~/.second-brain/vault.git`，vault 里不放任何 git 文件，所以不会被 iCloud 同步。两台电脑会各记各的；在一台上回滚时，另一台同步过来的修改也会被回滚，回滚前请确认。
 
 ## 接入飞书
 
@@ -123,6 +135,7 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 ├── 我的设置.md       个人配置：项目列表、生活分类、表情、批量上限等
 ├── index.md         总目录（自动生成）
 ├── log.md           处理记录，最新的在最上面
+├── .kb/state.json   处理进度（Obsidian 里看不到），随 iCloud 同步
 ├── inbox/           待处理队列
 ├── raw/             原文，只增不改
 ├── 主题/ 项目/ 生活/ 思考/
@@ -139,7 +152,9 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 
 **飞书消息拉不下来**：在 vault 目录运行 `kb pull --dry-run`，看返回的 `message`。常见原因是权限没开通、版本没发布，或机器人不在群里。
 
-**iCloud 里出现了"文件名 2.md"**：这是手机和电脑同时修改造成的冲突副本。说"体检"，会提示你合并。
+**iCloud 里出现了"文件名 2.md"**：这是两台设备同时修改造成的冲突副本。说"体检"，会提示你合并。
+
+**从 v0.1.0 升级**：在 vault 里说"升级"。`kb upgrade` 会把本机的处理进度并入 vault 的 `.kb/state.json`，并删除旧版本放在 vault 里的 `.git` 指针文件（原有历史仍在 `~/.second-brain/vault.git`，打开 `version_history` 后继续使用）。
 
 ## 开发
 

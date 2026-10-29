@@ -166,7 +166,7 @@ git 提交说明与这条记录的标题一致。
 | `kb index` | 重新生成 `index.md` |
 | `kb lint [--record]` | 确定性检查；`--record` 记下本次体检日期 |
 | `kb react` | 给已入库和抓取失败的飞书消息加表情 |
-| `kb commit -m <说明>` | 在 vault 中提交一次 |
+| `kb commit -m <说明>` | 提交一次（只在 `我的设置.md` 打开 `version_history` 时生效） |
 | `kb question --set <问题> --related <页面>` / `--clear` | 记录或清除本次追问 |
 | `kb upgrade` | 用 kit 的新版本覆盖系统文件（升级时用） |
 | `kb config --app-id --app-secret --chat-id` | 保存飞书凭证和群 ID |

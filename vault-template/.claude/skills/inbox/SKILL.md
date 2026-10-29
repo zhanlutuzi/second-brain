@@ -13,6 +13,7 @@ description: 处理收件箱。当用户说"处理收件箱"、"整理一下收�
 
 运行 `kb status`。
 
+- 如果 `other_machine_recent` 为 true：另一台电脑（`last_run.machine`）几分钟前刚处理过，iCloud 可能还没同步完，这时处理可能重复入库。告诉用户，并建议等几分钟、确认 iCloud 同步完成后再处理；用户坚持要继续才往下走。
 - 如果 `pending_question` 不为空：先把这个问题原样展示给用户（"上次的问题：……"），然后继续往下处理，不要停下来等。本次会话中用户只要回答了，就按"记录用户的回答"处理。
 - 记下 `batch_limit` 和 `settings.projects`、`settings.life_categories`。
 
@@ -79,7 +80,7 @@ description: 处理收件箱。当用户说"处理收件箱"、"整理一下收�
 
 3. 运行 `kb lint`。如果有 `error`，修好你本次造成的问题（例如漏写来源、链接写错），再运行 `kb index`。
 4. 运行 `kb react`（不带参数，自动给入库成功和抓取失败的飞书消息加表情）。
-5. 运行 `kb commit -m "<log.md 中本次记录的标题，去掉开头的 ## >"`。
+5. 运行 `kb commit -m "<log.md 中本次记录的标题，去掉开头的 ## >"`（没有打开版本记录时会返回 not_configured，跳过即可）。
 
 ## 第 5 步：报告和追问
 

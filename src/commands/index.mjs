@@ -104,7 +104,7 @@ export const COMMANDS = [
     stage: 'P1',
     run: inVault(async (ctx) => {
       const result = await lintVault(ctx.vault);
-      return ok(ctx.args.record ? { ...result, last_lint: await recordLint(ctx.env) } : result);
+      return ok(ctx.args.record ? { ...result, last_lint: await recordLint(ctx.vault, ctx.env) } : result);
     }),
   },
   {
@@ -123,10 +123,10 @@ export const COMMANDS = [
   {
     name: 'commit',
     usage: 'kb commit -m <message>',
-    summary: 'Commit the vault once',
+    summary: 'Commit the vault once (only when version_history is on)',
     options: { message: { type: 'string', short: 'm' } },
     stage: 'P1',
-    run: inVault(async (ctx) => commitVault(ctx.vault, ctx.args.message)),
+    run: inVault(async (ctx) => commitVault(ctx.vault, ctx.args.message, { env: ctx.env, settings: await readSettings(ctx.vault) })),
   },
   {
     name: 'status',
@@ -139,7 +139,7 @@ export const COMMANDS = [
   {
     name: 'init',
     usage: 'kb init <vault-path>',
-    summary: 'Create a new vault from vault-template with its git history outside iCloud',
+    summary: 'Create a new vault from vault-template in an empty folder',
     options: {},
     stage: 'P4',
     run: async (ctx) => onePositional(ctx, 'vault-path') ?? initVault(ctx.positionals[0], { env: ctx.env }),
@@ -150,7 +150,7 @@ export const COMMANDS = [
     summary: 'Replace the vault system files (CLAUDE.md, .claude/, _templates/) with this kit version',
     options: {},
     stage: 'P4',
-    run: inVault(async (ctx) => upgradeVault(ctx.vault)),
+    run: inVault(async (ctx) => upgradeVault(ctx.vault, { env: ctx.env })),
   },
   {
     name: 'config',
@@ -167,7 +167,7 @@ export const COMMANDS = [
     summary: 'Remember or clear the follow-up question asked after an inbox run',
     options: { set: { type: 'string' }, related: { type: 'string' }, clear: { type: 'boolean' } },
     stage: 'P1',
-    run: async (ctx) => setQuestion({ text: ctx.args.set, related: ctx.args.related, clear: ctx.args.clear }, ctx.env),
+    run: inVault(async (ctx) => setQuestion(ctx.vault, { text: ctx.args.set, related: ctx.args.related, clear: ctx.args.clear }, ctx.env)),
   },
 ];
 
