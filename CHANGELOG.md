@@ -1,22 +1,86 @@
-# Changelog
+# 更新日志
 
-## 0.2.0
+版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。升级方法见[使用说明·升级](docs/使用说明.md#八升级)。
 
-Process the inbox from any computer.
+## [0.2.0] - 2026-10-29
 
-- Processing state (cursor, pending reactions, follow-up question, last lint, last run) moved from `~/.second-brain/state.json` into the vault at `.kb/state.json`, synced by iCloud. Migrated automatically.
-- Version history is optional (`version_history` in 我的设置.md, off by default). When on, each computer keeps its own history in `~/.second-brain/vault.git` via `--work-tree`; the vault holds no `.git`. `kb upgrade` removes the v0.1.0 `.git` pointer file.
-- `kb status` warns when another computer processed the vault in the last 10 minutes; `kb lint` reports conflict copies of the state file.
-- `/setup` can attach a second computer to an existing vault.
-- `kb upgrade` is the only command needed to upgrade: it pulls the kit, runs npm install, then updates the vault with the new code; new 我的设置.md keys and .gitignore entries are appended, existing values are never changed.
-- User guide: docs/使用说明.md.
+这一版的重点：**任何一台电脑都能处理收件箱**，以及**一条命令升级**。
 
-## 0.1.0
+### 新增
 
-First usable release (P0–P4 in docs/TECH.md).
+- **多台电脑共用一个知识库**：处理进度（飞书游标、待加的表情、上次的追问、体检日期）改存在 vault 里的 `.kb/state.json`，随 iCloud 同步。换一台电脑处理，会接着上次的进度，不会把飞书群的历史从头再拉一遍。
+- **防止两台电脑同时处理**：每次处理会记下是哪台电脑、什么时间。另一台电脑在 10 分钟内再处理时，会提醒你先等 iCloud 同步完。
+- **一条命令升级**：`kb upgrade`（或者在 Claude Code 里说"升级"）会自动拉取新代码、安装依赖，再用新版本更新 vault。以后升级只需要这一条命令，两台电脑各运行一次即可。
+- **升级时补全设置**：新版本新增的设置项，会按默认值追加到 `我的设置.md`；`.gitignore` 缺少的条目也会补上。你已经设置过的值一个都不会改。
+- **第二台电脑的安装**：`/setup` 新增"使用已有的 vault"，只需要安装程序、填一次飞书凭证。
+- **使用说明**：新增 [docs/使用说明.md](docs/使用说明.md)，包括数据存放位置、日常使用、设置项说明、升级会动什么、两台电脑、常见问题、命令速查。
+- `kb lint` 会检查处理进度文件的 iCloud 冲突副本（例如 `.kb/state 2.json`）。
 
-- `kb` CLI: pull, fetch, file, index, lint, react, commit, status, question, init, upgrade, config — every command prints one JSON object.
-- Feishu inbox: chat history with cursor and dedupe, attachments, emoji reactions.
-- Link fetching: direct request, then a real Chromium via Playwright; WeChat articles supported; failures listed for manual clipping.
-- Vault template: CLAUDE.md rules, four page templates, settings, and the inbox / ask / review / lint / setup skills.
-- Vault history kept outside iCloud with `git --separate-git-dir`.
+### 变更
+
+- **版本记录改为可选，默认关闭**：在 `我的设置.md` 里把 `version_history` 设为 `true` 才会记录。打开后，历史存在每台电脑本机的 `~/.second-brain/vault.git`，vault 里不再放任何 git 文件，所以不会被 iCloud 同步到另一台电脑。
+- `kb init` 新建 vault 时不再初始化 git。
+- `kb upgrade` 遇到无法自动更新程序的情况时，会直接停下并说明原因，不会改动 vault。例如你改过 `~/second-brain-kit` 里的文件。
+
+### 从 0.1.0 升级
+
+0.1.0 的 `kb upgrade` 还不会自己拉取代码，所以这一次需要先手动更新程序，两台电脑都要做：
+
+```bash
+cd ~/second-brain-kit && git pull && npm install
+```
+
+然后在 vault 目录运行 `kb upgrade`。它会自动完成：
+
+- 把本机 `~/.second-brain/state.json` 中的处理进度并入 vault，原文件改名为 `state.json.migrated` 保留；
+- 删除 0.1.0 放在 vault 里的 `.git` 指针文件。原有的 git 历史仍在 `~/.second-brain/vault.git`，想继续记录，就把 `version_history` 改成 `true`；
+- 给 `我的设置.md` 补上 `version_history`，给 `.gitignore` 补上 `.kb/`。
+
+你的笔记、`CLAUDE.md` 的"个人补充"、`我的设置.md` 里已有的值、飞书凭证都不受影响。
+
+## [0.1.0] - 2026-10-28
+
+第一个可用版本。
+
+### 收集
+
+- **飞书收件箱**：拉取收件箱群的新消息，并按类型处理：
+  - 链接：每个链接一条，链接以外的文字作为备注保留；
+  - 想法：原话保存；
+  - 文件、图片：下载到本地；
+  - 会议纪要：文件名含"会议""纪要"，或者首行是"会议：项目名"；
+  - 合并转发的聊天记录：展开成文字；
+  - 语音、视频、表情包等暂不支持，会在报告里提醒。
+- **不重复、不遗漏**：用游标记录处理到哪条消息，同一秒内的多条消息按消息 ID 区分；入库时再按链接或消息 ID 查重。
+- **表情标记**：入库成功的消息加一个表情，抓取失败的加另一个，在手机上一眼就能看出哪些已经处理。表情可以在 `我的设置.md` 里修改。
+- **Web Clipper**：剪藏到 vault `inbox/` 文件夹的网页，会一起入库。
+
+### 抓取
+
+- **两级抓取**：先直接请求网页；失败了，或者网站在"直接用浏览器"名单里（默认包含公众号），就用真实的 Chromium 打开页面。正文用 Defuddle 转成 Markdown，并提取标题、作者、发布时间、站点名。
+- 支持公众号页面（正文默认隐藏、图片延迟加载）和 GBK 编码的页面。
+- 能识别验证页、正文过短的页面，把它们判为失败并写明原因，提示你用 Web Clipper 手动剪藏。
+
+### 整理
+
+- **入库**：原文存进 `raw/年/月/`，之后不再修改，并记录正文哈希。
+- **编译成 wiki**：新内容优先更新已有页面，要点整理进主题页、项目页、生活页，每条要点都附上出处。
+- **只记原话**：你的想法和对追问的回答，一字不改地记进 `思考/年-月.md`。
+- **处理报告**：列出已入库、失败、重复、待确认的条目，最后问你一个问题。
+- **总目录**：`index.md` 由脚本根据页面属性自动生成，总是和实际页面一致。
+
+### 使用
+
+- **提问**：基于知识库回答，每个说法都附出处；找不到依据就直说"知识库里没有"。回答可以存成新的主题页。
+- **每周回顾**：本周新增、你写下的话、观点变化、待回应的事项。只出报告，不改文件。
+- **体检**：检查失效链接、缺少属性、要点没有出处、原文被改动、目录过期、同名页面、iCloud 冲突副本等，再检查重复、矛盾、过时、过长的页面。只给出建议清单，你确认后才修改。
+
+### 安装与配置
+
+- `/setup` 一问一答完成安装：检查环境、安装依赖和浏览器、创建 vault、配置飞书、添加 `kb-open` 快捷命令、用示例数据试跑。
+- `kb init`、`kb upgrade`、`kb config` 分别负责创建 vault、升级系统文件、保存飞书配置。
+- 飞书 App Secret 只保存在本机的 `~/.second-brain/.env`，文件权限 600，所有输出里都会打码。
+- vault 的 git 历史放在 iCloud 之外（`~/.second-brain/vault.git`）。
+
+[0.2.0]: https://github.com/zhanlutuzi/second-brain/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/zhanlutuzi/second-brain/releases/tag/v0.1.0
