@@ -1,6 +1,6 @@
 {
   "name": "second-brain-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A personal knowledge base kit based on Karpathy's LLM-Wiki pattern: Feishu inbox + Obsidian vault + Claude Code.",
   "license": "MIT",
   "private": true,

@@ -5,7 +5,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-import { readState, writeState } from '../state.mjs';
+import { machineName, readState, writeState } from '../state.mjs';
 import { isoLocal } from '../util/date.mjs';
 import { stringifyMarkdown } from '../vault/frontmatter.mjs';
 import { sanitizeName } from '../vault/layout.mjs';
@@ -25,11 +25,16 @@ function entryName(messageId, i) {
   return i === 0 ? `feishu-${messageId}.md` : `feishu-${messageId}-${i + 1}.md`;
 }
 
-export async function pull(vault, { client, env, settings, dryRun = false, since }) {
+export async function pull(vault, { client, env, settings, dryRun = false, since, now = Date.now() }) {
   const chatId = settings.feishu_chat_id;
   if (!chatId) return { ok: false, error: 'missing_chat_id', message: 'feishu_chat_id is empty in 我的设置.md; run /setup' };
 
-  const state = await readState(env);
+  const state = await readState(vault, env);
+  if (!dryRun) {
+    // Tell other computers this vault is being processed right now.
+    state.last_run = { machine: machineName(env), at: isoLocal(now) };
+    await writeState(vault, state, env);
+  }
   const feishu = state.feishu ?? {};
   let startTime = feishu.cursor_time;
   if (startTime === undefined && since) {
@@ -115,9 +120,9 @@ export async function pull(vault, { client, env, settings, dryRun = false, since
   } while (pageToken);
 
   if (!dryRun && cursorTime !== null) {
-    const latest = await readState(env);
+    const latest = await readState(vault, env);
     latest.feishu = { ...(latest.feishu ?? {}), cursor_time: cursorTime, cursor_ids: cursorIds };
-    await writeState(latest, env);
+    await writeState(vault, latest, env);
   }
 
   return { ok: true, dry_run: dryRun, new: created, skipped, cursor: { cursor_time: cursorTime, cursor_ids: cursorIds } };

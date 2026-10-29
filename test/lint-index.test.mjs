@@ -100,6 +100,8 @@ describe('kb lint', () => {
     const r = await lintVault(v.vault);
     expect(r.errors).toBe(0);
     expect(new Set(codes(r, 'warning'))).toEqual(new Set(['orphan', 'too_long', 'conflict_copy', 'unknown_folder']));
+    await put(v.vault, '.kb/state 2.json', '{}');
+    expect((await lintVault(v.vault)).issues.filter((i) => i.file === '.kb/state 2.json')).toHaveLength(1);
   });
 
   it('does not count index.md or a self-link as an inbound link', async () => {

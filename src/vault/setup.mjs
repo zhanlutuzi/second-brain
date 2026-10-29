@@ -1,17 +1,14 @@
 // kb init / kb upgrade / kb config: the deterministic half of the setup skill.
 
-import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { chmod, cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 import { mask, parseEnvFile } from '../feishu/config.mjs';
-import { paths, readState, writeState } from '../state.mjs';
+import { migrateLegacyState, paths, readState, writeState } from '../state.mjs';
 import { localDate } from '../util/date.mjs';
 import { SETTINGS_FILE } from './layout.mjs';
 
-const run = promisify(execFile);
 export const TEMPLATE = fileURLToPath(new URL('../../vault-template', import.meta.url));
 
 // Everything under these paths belongs to the kit and is replaced on upgrade.
@@ -30,10 +27,6 @@ export async function initVault(target, { env = process.env, now = new Date(), t
   if (!(await isEmptyEnough(vault))) {
     return { ok: false, error: 'not_empty', message: `${vault} already has files; choose an empty folder` };
   }
-  const gitDir = paths(env).vaultGit;
-  if (existsSync(gitDir)) {
-    return { ok: false, error: 'git_dir_exists', message: `${gitDir} already exists; another vault uses it` };
-  }
 
   await mkdir(vault, { recursive: true });
   const hadObsidian = existsSync(join(vault, '.obsidian'));
@@ -44,21 +37,9 @@ export async function initVault(target, { env = process.env, now = new Date(), t
   });
   await rename(join(vault, 'gitignore'), join(vault, '.gitignore'));
 
-  await mkdir(paths(env).home, { recursive: true });
-  const git = (...args) => run('git', args, { cwd: vault });
-  await git('init', '--quiet', '--separate-git-dir', gitDir);
-  await git('add', '--all');
-  const today = localDate(now);
-  try {
-    await git('commit', '--quiet', '-m', `[${today}] 初始化知识库`);
-  } catch (err) {
-    return { ok: false, error: 'commit_failed', message: `${(err.stderr || err.message).trim()} (set git user.name / user.email first)`, vault, git_dir: gitDir };
-  }
-
   // Start the lint clock today so a fresh vault is not reported as overdue.
-  const state = await readState(env);
-  if (!state.last_lint) await writeState({ ...state, last_lint: today }, env);
-  return { ok: true, vault, git_dir: gitDir };
+  await writeState(vault, { last_lint: localDate(now) }, env);
+  return { ok: true, vault };
 }
 
 // Keep everything after the personal marker in the user's CLAUDE.md.
@@ -81,9 +62,22 @@ async function listFiles(dir, base = dir) {
   return out.sort();
 }
 
-export async function upgradeVault(vault, { template = TEMPLATE } = {}) {
+// v0.1.0 put a .git pointer file in the vault; iCloud syncs it to other computers,
+// where it points nowhere. History now lives only in ~/.second-brain/vault.git.
+async function removeGitPointer(vault) {
+  const file = join(vault, '.git');
+  if (!existsSync(file) || !(await stat(file)).isFile()) return false;
+  if (!(await readFile(file, 'utf8')).startsWith('gitdir:')) return false;
+  await rm(file);
+  return true;
+}
+
+export async function upgradeVault(vault, { template = TEMPLATE, env = process.env } = {}) {
   const changed = [];
   const removed = [];
+  const migrated = [];
+  if (await removeGitPointer(vault)) migrated.push('removed .git pointer (history stays in ~/.second-brain/vault.git)');
+  if (await migrateLegacyState(vault, env)) migrated.push('moved ~/.second-brain/state.json into .kb/state.json');
   for (const sys of SYSTEM_PATHS) {
     const src = join(template, sys);
     const dst = join(vault, sys);
@@ -107,7 +101,7 @@ export async function upgradeVault(vault, { template = TEMPLATE } = {}) {
     }
     for (const f of before.keys()) if (!after.includes(f)) removed.push(`${sys}/${f}`);
   }
-  return { ok: true, changed, removed };
+  return { ok: true, changed, removed, migrated };
 }
 
 // Replace one top-level key in the settings frontmatter, keeping everything else as written.
@@ -144,9 +138,9 @@ export async function configure(vault, { appId, appSecret, chatId }, env = proce
   return { ok: true, written };
 }
 
-export async function recordLint(env = process.env, now = new Date()) {
-  const state = await readState(env);
+export async function recordLint(vault, env = process.env, now = new Date()) {
+  const state = await readState(vault, env);
   state.last_lint = localDate(now);
-  await writeState(state, env);
+  await writeState(vault, state, env);
   return state.last_lint;
 }

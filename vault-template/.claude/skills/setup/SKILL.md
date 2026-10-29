@@ -10,10 +10,11 @@ description: 升级知识库系统或修改飞书配置。当用户说"升级"�
 ## 升级（/setup --upgrade）
 
 1. 运行 `git -C ~/second-brain-kit pull`，再运行 `npm --prefix ~/second-brain-kit install`。
-2. 在 vault 目录运行 `kb upgrade`。它只覆盖系统文件（`CLAUDE.md`、`.claude/`、`_templates/`），`CLAUDE.md` 里"个人补充"之后的内容会原样保留，其余文件一概不动。
-3. 把结果中的 `changed` 和 `removed` 告诉用户，然后运行 `kb lint` 确认没有新的 error。
-4. 运行 `kb commit -m "[YYYY-MM-DD] 升级系统文件"`。
-5. 提醒用户：`.claude/` 中的 skill 变化，需要重新启动 Claude Code 才会生效。
+2. 在 vault 目录运行 `kb upgrade`。它只覆盖系统文件（`CLAUDE.md`、`.claude/`、`_templates/`），`CLAUDE.md` 里"个人补充"之后的内容会原样保留，其余文件一概不动。它还会迁移旧版本的数据：把本机的处理进度并入 vault 的 `.kb/state.json`，并删除旧版本放在 vault 里的 `.git` 指针文件。
+3. 把结果中的 `changed`、`removed` 和 `migrated` 告诉用户，然后运行 `kb lint` 确认没有新的 error。
+4. 运行 `kb commit -m "[YYYY-MM-DD] 升级系统文件"`（没有打开版本记录时跳过）。
+5. 如果用户有两台电脑，提醒另一台电脑也在 kit 目录 `git pull`、`npm install`；vault 里的系统文件已经随 iCloud 同步过去了，不需要再运行 `kb upgrade`。
+6. 提醒用户：`.claude/` 中的 skill 变化，需要重新启动 Claude Code 才会生效。
 
 ## 配置飞书
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+Process the inbox from any computer.
+
+- Processing state (cursor, pending reactions, follow-up question, last lint, last run) moved from `~/.second-brain/state.json` into the vault at `.kb/state.json`, synced by iCloud. Migrated automatically.
+- Version history is optional (`version_history` in 我的设置.md, off by default). When on, each computer keeps its own history in `~/.second-brain/vault.git` via `--work-tree`; the vault holds no `.git`. `kb upgrade` removes the v0.1.0 `.git` pointer file.
+- `kb status` warns when another computer processed the vault in the last 10 minutes; `kb lint` reports conflict copies of the state file.
+- `/setup` can attach a second computer to an existing vault.
+
 ## 0.1.0
 
 First usable release (P0–P4 in docs/TECH.md).

@@ -146,7 +146,7 @@ export async function fileEntry(vault, entry, { title, summary, now = new Date()
   if (dup) {
     await unlink(file);
     if (data.attachment) await unlink(join(dirname(file), basename(String(data.attachment)))).catch(() => {});
-    if (data.source === 'feishu' && data.message_id) await queueReaction(data.message_id, env);
+    if (data.source === 'feishu' && data.message_id) await queueReaction(vault, data.message_id, env);
     return { ok: true, duplicate: true, entry: rel, path: relPath(vault, dup), link: rawLink(vault, dup) };
   }
 
@@ -169,7 +169,7 @@ export async function fileEntry(vault, entry, { title, summary, now = new Date()
   const target = uniquePath(dir, sanitizeName(`${captured}-${finalTitle}`));
   await writeFile(target, stringifyMarkdown(out, body), { encoding: 'utf8', flag: 'wx' });
   await unlink(file);
-  if (out.source === 'feishu' && out.message_id) await queueReaction(out.message_id, env);
+  if (out.source === 'feishu' && out.message_id) await queueReaction(vault, out.message_id, env);
 
   return {
     ok: true,

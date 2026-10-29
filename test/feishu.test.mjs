@@ -125,8 +125,9 @@ describe('kb pull', () => {
     expect(fake.of(/^\/open-apis\/im\/v1\/messages$/).map((c) => c.query.page_token ?? '')).toEqual(['', 'pt_fixture_2']);
     expect(fake.of(/tenant_access_token/)).toHaveLength(1);
 
-    const state = await readState(v.env);
+    const state = await readState(v.vault, v.env);
     expect(state.feishu).toEqual({ cursor_time: 1761611540, cursor_ids: ['om_fx_13', 'om_fx_14'] });
+    expect(state.last_run.machine).toBe(process.env.KB_MACHINE ?? (await import('node:os')).hostname());
   });
 
   it('writes entries in the inbox format from docs/TECH.md', async () => {
@@ -186,7 +187,7 @@ describe('kb pull', () => {
     const r = await run(fakeFeishu(), { dryRun: true });
     expect(r.new).toHaveLength(11);
     expect(await readdir(join(v.vault, 'inbox'))).toEqual(['.gitkeep']);
-    expect(await readState(v.env)).toEqual({});
+    expect(await readState(v.vault, v.env)).toEqual({});
   });
 
   it('keeps the cursor when a download fails, so the run can be repeated', async () => {
@@ -194,10 +195,25 @@ describe('kb pull', () => {
     const original = fake.fetch;
     const broken = async (url, init) => (String(url).includes('/resources/img_') ? new Response('{"code":234003,"msg":"file not found"}', { status: 400, headers: { 'content-type': 'application/json' } }) : original(url, init));
     await expect(pull(v.vault, { client: createClient({ ...CREDS, fetch: broken }), env: v.env, settings: SETTINGS })).rejects.toThrow(/file not found/);
-    expect(await readState(v.env)).toEqual({});
+    expect((await readState(v.vault, v.env)).feishu).toBeUndefined();
     const r = await run(fakeFeishu());
     expect(r.new.map((e) => e.message_id)).not.toContain('om_fx_01');
     expect(r.new.map((e) => e.message_id)).toContain('om_fx_07');
+  });
+
+  it('lets a second computer continue from the shared cursor', async () => {
+    const a = { SECOND_BRAIN_HOME: join(v.tmp, 'mac-a'), KB_MACHINE: 'Mac A' };
+    const b = { SECOND_BRAIN_HOME: join(v.tmp, 'mac-b'), KB_MACHINE: 'Mac B' };
+    const first = await run(fakeFeishu(), { env: a });
+    expect(first.new).toHaveLength(11);
+
+    const { vaultStatus } = await import('../src/vault/status.mjs');
+    expect(await vaultStatus(v.vault, b)).toMatchObject({ machine: 'Mac B', other_machine_recent: true, last_run: { machine: 'Mac A' } });
+
+    const fake = fakeFeishu();
+    const second = await run(fake, { env: b });
+    expect(second.new).toEqual([]);
+    expect(fake.of(/^\/open-apis\/im\/v1\/messages$/)[0].query.start_time).toBe('1761611540');
   });
 
   it('requires a chat id', async () => {
@@ -219,7 +235,7 @@ describe('kb file with Feishu entries', () => {
     expect(body).toBe('![[feishu-om_fx_05-周会纪要.pdf]]\n');
     expect(existsSync(join(v.vault, 'raw/assets/feishu-om_fx_05-周会纪要.pdf'))).toBe(true);
     expect(existsSync(join(v.vault, 'inbox/feishu-om_fx_05-周会纪要.pdf'))).toBe(false);
-    expect((await readState(v.env)).feishu.pending_ok).toEqual(['om_fx_05']);
+    expect((await readState(v.vault, v.env)).feishu.pending_ok).toEqual(['om_fx_05']);
   });
 
   it('files two links from one message separately, but never the same URL twice', async () => {
@@ -230,7 +246,7 @@ describe('kb file with Feishu entries', () => {
     expect([a.duplicate, b.duplicate]).toEqual([false, false]);
     await put(v.vault, 'inbox/again.md', '---\nsource: feishu\nmessage_id: om_fx_77\nkind: link\nurl: https://example.org/c/\nfetch_status: ok\n---\n正文\n');
     expect(await fileEntry(v.vault, 'inbox/again.md', { env: v.env })).toMatchObject({ duplicate: true, path: b.path });
-    expect((await readState(v.env)).feishu.pending_ok).toEqual(['om_fx_02', 'om_fx_77']);
+    expect((await readState(v.vault, v.env)).feishu.pending_ok).toEqual(['om_fx_02', 'om_fx_77']);
   });
 
   it('leaves unfetched links in the inbox', async () => {
@@ -246,12 +262,12 @@ describe('kb react', () => {
   const reactions = (fake) => fake.of(/\/reactions$/).map((c) => `${c.path.split('/')[5]} ${c.body.reaction_type.emoji_type}`);
 
   it('marks filed messages OK and failed fetches CRY, once each', async () => {
-    await writeState({ feishu: { cursor_time: 1, pending_ok: ['om_fx_01', 'om_fx_03'] } }, v.env);
+    await writeState(v.vault, { feishu: { cursor_time: 1, pending_ok: ['om_fx_01', 'om_fx_03'] } }, v.env);
     await put(v.vault, 'inbox/feishu-om_fx_04.md', '---\nsource: feishu\nmessage_id: om_fx_04\nkind: link\nurl: https://example.com/tool\nfetch_status: failed\nfetch_error: http 403\n---\n');
     const fake = fakeFeishu();
     expect(await run(fake)).toEqual({ ok: true, reacted_ok: 2, reacted_failed: 1, errors: [] });
     expect(reactions(fake)).toEqual(['om_fx_01 OK', 'om_fx_03 OK', 'om_fx_04 CRY']);
-    expect((await readState(v.env)).feishu).toEqual({ cursor_time: 1, pending_ok: [], marked_failed: ['om_fx_04'] });
+    expect((await readState(v.vault, v.env)).feishu).toEqual({ cursor_time: 1, pending_ok: [], marked_failed: ['om_fx_04'] });
 
     const again = fakeFeishu();
     expect(await run(again)).toEqual({ ok: true, reacted_ok: 0, reacted_failed: 0, errors: [] });
@@ -259,23 +275,23 @@ describe('kb react', () => {
   });
 
   it('uses the emoji types from 我的设置', async () => {
-    await writeState({ feishu: { pending_ok: ['om_fx_01'] } }, v.env);
+    await writeState(v.vault, { feishu: { pending_ok: ['om_fx_01'] } }, v.env);
     const fake = fakeFeishu();
     await run(fake, { settings: { ...SETTINGS, reaction_ok: 'DONE' } });
     expect(reactions(fake)).toEqual(['om_fx_01 DONE']);
   });
 
   it('drops messages the API rejects but keeps them on network errors', async () => {
-    await writeState({ feishu: { pending_ok: ['om_fx_01', 'om_fx_03'] } }, v.env);
+    await writeState(v.vault, { feishu: { pending_ok: ['om_fx_01', 'om_fx_03'] } }, v.env);
     const r = await run(fakeFeishu({ failReactions: { om_fx_01: 231003 } }));
     expect(r).toMatchObject({ reacted_ok: 1, errors: [{ message_id: 'om_fx_01', code: 231003 }] });
-    expect((await readState(v.env)).feishu.pending_ok).toEqual([]);
+    expect((await readState(v.vault, v.env)).feishu.pending_ok).toEqual([]);
 
-    await writeState({ feishu: { pending_ok: ['om_fx_03'] } }, v.env);
+    await writeState(v.vault, { feishu: { pending_ok: ['om_fx_03'] } }, v.env);
     const failing = createClient({ ...CREDS, fetch: fakeFeishu().fetch });
     failing.addReaction = async () => { throw new TypeError('fetch failed'); };
     await react(v.vault, { client: failing, env: v.env, settings: SETTINGS });
-    expect((await readState(v.env)).feishu.pending_ok).toEqual(['om_fx_03']);
+    expect((await readState(v.vault, v.env)).feishu.pending_ok).toEqual(['om_fx_03']);
   });
 
   it('accepts an explicit result file', async () => {

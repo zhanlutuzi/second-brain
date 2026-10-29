@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = {
   life_categories: [],
   batch_limit: 30,
   lint_interval_days: 30,
+  version_history: false,
 };
 
 export async function readSettings(vault) {
