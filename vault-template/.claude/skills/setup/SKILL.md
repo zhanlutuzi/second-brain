@@ -9,11 +9,15 @@ description: 升级知识库系统或修改飞书配置。当用户说"升级"�
 
 ## 升级（/setup --upgrade）
 
-1. 运行 `git -C ~/second-brain-kit pull`，再运行 `npm --prefix ~/second-brain-kit install`。
-2. 在 vault 目录运行 `kb upgrade`。它只覆盖系统文件（`CLAUDE.md`、`.claude/`、`_templates/`），`CLAUDE.md` 里"个人补充"之后的内容会原样保留，其余文件一概不动。它还会迁移旧版本的数据：把本机的处理进度并入 vault 的 `.kb/state.json`，并删除旧版本放在 vault 里的 `.git` 指针文件。
-3. 把结果中的 `changed`、`removed` 和 `migrated` 告诉用户，然后运行 `kb lint` 确认没有新的 error。
-4. 运行 `kb commit -m "[YYYY-MM-DD] 升级系统文件"`（没有打开版本记录时跳过）。
-5. 如果用户有两台电脑，提醒另一台电脑也在 kit 目录 `git pull`、`npm install`；vault 里的系统文件已经随 iCloud 同步过去了，不需要再运行 `kb upgrade`。
+1. 在 vault 目录运行 `kb upgrade`。它会自己完成全部步骤：
+   - 在 kit 目录 `git pull` 拿到新代码，并 `npm install`；
+   - 用新代码覆盖系统文件（`CLAUDE.md`、`.claude/`、`_templates/`），`CLAUDE.md` 里"个人补充"之后的内容原样保留；
+   - 给 `我的设置.md` 补上新版本新增的字段、给 `.gitignore` 补上新增的条目，已有的值一律不改；
+   - 迁移旧版本的数据。
+2. 把结果告诉用户：`kit.updated`（有没有新版本）、`changed`、`removed`、`added`、`migrated`。
+3. 如果返回 `kit_update_failed`：通常是用户改过 kit 目录里的文件，`git pull` 无法自动合并。把 `message` 原样告诉用户，不要替用户丢弃修改；用户处理好之后再运行一次 `kb upgrade`。
+4. 运行 `kb lint` 确认没有新的 error，再运行 `kb commit -m "[YYYY-MM-DD] 升级系统文件"`（没有打开版本记录时跳过）。
+5. 如果用户有两台电脑，提醒另一台电脑也运行一次 `kb upgrade`，以更新那台电脑上的 kit 代码。vault 的系统文件已经随 iCloud 同步过去，不会被重复修改。
 6. 提醒用户：`.claude/` 中的 skill 变化，需要重新启动 Claude Code 才会生效。
 
 ## 配置飞书
