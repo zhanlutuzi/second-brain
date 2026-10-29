@@ -114,7 +114,7 @@ second-brain-kit/
 | kb commit -m &lt;说明&gt; | 在 vault 中提交一次；"我的设置"中 version_history 为 false（默认）时返回 not_configured，skill 跳过 | commit id |
 | kb status | 待处理条目（按时间排序）、上次体检日期、未回复的追问、个人设置 | 状态摘要 |
 | kb init &lt;vault 路径&gt; | 首次安装：把 vault-template 复制到一个空目录 | vault 路径 |
-| kb upgrade | 用 kit 中的新版本覆盖 vault 的系统文件，保留 CLAUDE.md 的个人补充；同时迁移旧版本的数据（见"版本控制、同步与密钥"） | 更新的文件列表 |
+| kb upgrade [--no-pull] | 一条命令完成升级：先在 kit 目录 git pull（只快进）和 npm install，再用新代码更新 vault：覆盖系统文件（保留 CLAUDE.md 的个人补充），给"我的设置"补上缺少的新字段、给 .gitignore 补上缺少的新条目（已有内容不改），迁移旧版本的数据。--no-pull 跳过前两步 | 更新、补充、迁移的文件列表 |
 | kb config [--app-id] [--app-secret] [--chat-id] | 写入飞书凭证（~/.second-brain/.env，权限 600）和群 ID（我的设置） | 已写入的项（Secret 打码） |
 | kb question --set &lt;问题&gt; [--related &lt;页面&gt;] / --clear | 记录或清除本次追问（写入 state.json） | 当前追问 |
 
@@ -322,7 +322,7 @@ lint_interval_days: 30
 5. 运行一次 kb pull --dry-run，测试连通性；
 6. 在 ~/.zshrc 中加一个 kb-open 函数，用来进入 vault 目录并启动 Claude Code。
 
-加 --upgrade 参数时，先在 kit 目录 git pull，再运行 kb upgrade，只用 kit 中的新版本覆盖系统文件（CLAUDE.md、.claude/、_templates/），CLAUDE.md 中"个人补充"标记之后的内容原样保留。
+加 --upgrade 参数时，运行 kb upgrade 即可：它会先在 kit 目录 git pull 和 npm install，再启动新版本的代码更新 vault。只覆盖系统文件（CLAUDE.md、.claude/、_templates/），CLAUDE.md 中"个人补充"标记之后的内容原样保留；用户文件只做"补缺"：我的设置.md 缺少的字段按模板的默认值追加，.gitignore 缺少的条目追加到末尾，已有的值和条目一律不改。kit 目录有本地修改、无法快进时停止，并提示用户处理。两台电脑都运行 kb upgrade：第二台拉取新代码后，vault 已经是新版本，不会重复修改。
 
 ## 版本控制、同步与密钥
 

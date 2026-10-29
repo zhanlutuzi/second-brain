@@ -16,7 +16,7 @@ import { writeIndex } from '../vault/indexer.mjs';
 import { SETTINGS_FILE } from '../vault/layout.mjs';
 import { readSettings } from '../vault/settings.mjs';
 import { setQuestion } from '../vault/question.mjs';
-import { configure, initVault, recordLint, upgradeVault } from '../vault/setup.mjs';
+import { configure, initVault, recordLint, upgradeAll, upgradeVault } from '../vault/setup.mjs';
 import { vaultStatus } from '../vault/status.mjs';
 
 // Vault commands refuse to run anywhere that is not a vault (e.g. the kit repo),
@@ -146,11 +146,12 @@ export const COMMANDS = [
   },
   {
     name: 'upgrade',
-    usage: 'kb upgrade',
-    summary: 'Replace the vault system files (CLAUDE.md, .claude/, _templates/) with this kit version',
-    options: {},
+    usage: 'kb upgrade [--no-pull]',
+    summary: 'Update the kit (git pull, npm install), then the vault system files; user files are only extended',
+    options: { 'no-pull': { type: 'boolean' } },
     stage: 'P4',
-    run: inVault(async (ctx) => upgradeVault(ctx.vault, { env: ctx.env })),
+    run: inVault(async (ctx) =>
+      ctx.args['no-pull'] ? upgradeVault(ctx.vault, { env: ctx.env }) : upgradeAll(ctx.vault, { env: ctx.env, run: ctx.run })),
   },
   {
     name: 'config',

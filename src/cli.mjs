@@ -87,6 +87,7 @@ export async function main(argv, io = process, env = process.env) {
     env,
     fetch: io.fetch,
     browser: io.browser,
+    run: io.run,
   };
 
   try {

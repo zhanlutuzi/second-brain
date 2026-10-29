@@ -65,7 +65,8 @@ describe('JSON output contract', () => {
   afterEach(() => rm(tmp, { recursive: true, force: true }));
 
   it.each(EXPECTED)('kb %s prints exactly one JSON object', async (name) => {
-    const { out } = await run([name], env);
+    // Never let a test git-pull this repository.
+    const { out } = await run(name === 'upgrade' ? [name, '--no-pull'] : [name], env);
     expect(out.endsWith('\n')).toBe(true);
     expect(out.trim().split('\n')).toHaveLength(1);
     expect(JSON.parse(out)).toHaveProperty('ok');

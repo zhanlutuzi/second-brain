@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { lintVault } from '../src/lint/index.mjs';
 import { readState } from '../src/state.mjs';
 import { parseMarkdown } from '../src/vault/frontmatter.mjs';
-import { configure, initVault, mergeClaudeMd, setSettingsField, upgradeVault } from '../src/vault/setup.mjs';
+import { TEMPLATE, addMissingIgnores, addMissingSettings, configure, initVault, mergeClaudeMd, setSettingsField, upgradeAll, upgradeVault } from '../src/vault/setup.mjs';
 import { readSettings } from '../src/vault/settings.mjs';
 import { vaultStatus } from '../src/vault/status.mjs';
 
@@ -80,7 +80,7 @@ describe('kb upgrade', () => {
     const settings = await readFile(join(vault, '我的设置.md'), 'utf8');
 
     const r = await upgradeVault(vault, { template, env });
-    expect(r).toEqual({ ok: true, changed: ['CLAUDE.md', '.claude/skills/new/SKILL.md'], removed: ['_templates/生活.md'], migrated: [] });
+    expect(r).toEqual({ ok: true, changed: ['CLAUDE.md', '.claude/skills/new/SKILL.md'], removed: ['_templates/生活.md'], added: [], migrated: [] });
 
     const claude = await readFile(join(vault, 'CLAUDE.md'), 'utf8');
     expect(claude).toContain('# 第二大脑 · 规则 v2');
@@ -89,7 +89,7 @@ describe('kb upgrade', () => {
     expect(await readFile(join(vault, '我的设置.md'), 'utf8')).toBe(settings);
     expect(existsSync(join(vault, '_templates/生活.md'))).toBe(false);
 
-    expect(await upgradeVault(vault, { template, env })).toEqual({ ok: true, changed: [], removed: [], migrated: [] });
+    expect(await upgradeVault(vault, { template, env })).toEqual({ ok: true, changed: [], removed: [], added: [], migrated: [] });
   });
 
   it('migrates a v0.1.0 vault: removes the .git pointer and moves the state', async () => {
@@ -101,6 +101,27 @@ describe('kb upgrade', () => {
     expect(existsSync(join(vault, '.git'))).toBe(false);
     expect((await readState(vault, env)).feishu).toEqual({ cursor_time: 9, cursor_ids: ['om_old'] });
     expect(existsSync(join(tmp, 'home', 'state.json.migrated'))).toBe(true);
+  });
+
+  it('adds new settings fields and ignore entries without touching existing ones', async () => {
+    // A v0.1.0 vault: no version_history, my own chat id and batch limit, my own ignore rule.
+    const settingsFile = join(vault, '我的设置.md');
+    const old = (await readFile(settingsFile, 'utf8')).replace('version_history: false\n', '').replace('batch_limit: 30', 'batch_limit: 10').replace('feishu_chat_id: ""', 'feishu_chat_id: oc_mine');
+    await writeFile(settingsFile, old);
+    await writeFile(join(vault, '.gitignore'), '.obsidian/workspace*.json\nmy-private/\n');
+    await writeFile(join(template, 'gitignore'), await readFile(join(TEMPLATE, 'gitignore'), 'utf8'));
+
+    const r = await upgradeVault(vault, { template, env });
+    expect(r.added).toContain('我的设置.md: version_history');
+    expect(r.added).toContain('.gitignore: .kb/');
+    const settings = await readSettings(vault);
+    expect(settings).toMatchObject({ version_history: false, batch_limit: 10, feishu_chat_id: 'oc_mine' });
+    expect((await readFile(settingsFile, 'utf8')).startsWith(old.slice(0, old.indexOf('\n---')))).toBe(true);
+    const ignore = await readFile(join(vault, '.gitignore'), 'utf8');
+    expect(ignore.startsWith('.obsidian/workspace*.json\nmy-private/\n')).toBe(true);
+    expect(ignore.split('\n').filter((l) => l === '.obsidian/workspace*.json')).toHaveLength(1);
+
+    expect((await upgradeVault(vault, { template, env })).added).toEqual([]);
   });
 
   it('never removes a real .git directory', async () => {
@@ -147,5 +168,61 @@ describe('kb config', () => {
     const out = setSettingsField('---\na: 1\n---\n正文\n', 'feishu_chat_id', 'oc_x');
     expect(parseMarkdown(out).data).toEqual({ a: 1, feishu_chat_id: 'oc_x' });
     expect(parseMarkdown(out).body).toBe('正文\n');
+  });
+});
+
+describe('kb upgrade (one command)', () => {
+  // A fake shell: records commands, simulates git and the re-run of the new kb.
+  function fakeRun({ before = 'aaa1111', after = 'bbb2222', pullError, noGit } = {}) {
+    const calls = [];
+    let head = before;
+    const run = async (cmd, args) => {
+      calls.push([cmd, ...args].join(' '));
+      if (cmd === 'git') {
+        if (noGit) throw Object.assign(new Error('not a git repository'), { stderr: 'fatal: not a git repository' });
+        if (args.includes('rev-parse')) return `${head}\n`;
+        if (args.includes('pull')) {
+          if (pullError) throw Object.assign(new Error('pull'), { stderr: pullError });
+          head = after;
+          return '';
+        }
+      }
+      if (cmd === 'npm') return '';
+      return `${JSON.stringify({ ok: true, changed: ['CLAUDE.md'], removed: [], added: [], migrated: [] })}\n`;
+    };
+    return { run, calls };
+  }
+
+  it('pulls the kit, installs, then lets the new version update the vault', async () => {
+    const f = fakeRun();
+    const r = await upgradeAll('/vault', { env, kitDir: '/kit', run: f.run });
+    expect(r).toEqual({ ok: true, changed: ['CLAUDE.md'], removed: [], added: [], migrated: [], kit: { from: 'aaa1111', to: 'bbb2222', updated: true } });
+    expect(f.calls).toEqual([
+      'git -C /kit rev-parse --short HEAD',
+      'git -C /kit pull --ff-only --quiet',
+      'git -C /kit rev-parse --short HEAD',
+      'npm install --no-audit --no-fund --silent',
+      `${process.execPath} /kit/bin/kb.mjs upgrade --no-pull --vault /vault`,
+    ]);
+  });
+
+  it('skips npm install when the kit is already up to date', async () => {
+    const f = fakeRun({ after: 'aaa1111' });
+    expect((await upgradeAll('/vault', { env, kitDir: '/kit', run: f.run })).kit.updated).toBe(false);
+    expect(f.calls.some((c) => c.startsWith('npm'))).toBe(false);
+  });
+
+  it('stops before touching the vault when the kit cannot be updated', async () => {
+    const f = fakeRun({ pullError: 'error: Your local changes would be overwritten' });
+    expect(await upgradeAll('/vault', { env, kitDir: '/kit', run: f.run })).toMatchObject({ ok: false, error: 'kit_update_failed' });
+    expect(f.calls.some((c) => c.includes('kb.mjs'))).toBe(false);
+    expect((await upgradeAll('/vault', { env, kitDir: '/kit', run: fakeRun({ noGit: true }).run })).error).toBe('kit_not_git');
+  });
+
+  it('extends settings and ignore files line by line', () => {
+    const tpl = '---\na: 1\nb: 2 # new\n---\n';
+    expect(addMissingSettings('---\na: 9\n---\n正文\n', tpl)).toEqual({ text: '---\na: 9\nb: 2 # new\n---\n正文\n', added: ['b'] });
+    expect(addMissingSettings('没有属性的文件', tpl).added).toEqual([]);
+    expect(addMissingIgnores('x\n', '# c\nx\ny\n')).toEqual({ text: 'x\n\n# Added by kb upgrade\ny\n', added: ['y'] });
   });
 });

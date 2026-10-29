@@ -16,6 +16,8 @@ flowchart LR
   E --> F["Obsidian 里浏览<br/>Claude Code 里提问"]
 ```
 
+> 📖 完整的使用说明（每天怎么用、升级会动什么、常见问题）见 **[docs/使用说明.md](docs/使用说明.md)**。
+
 ## 两部分
 
 | | kit（本仓库） | vault（你的知识库） |
@@ -97,7 +99,7 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 | 把这个回答存下来 | 存成一个新的主题页 |
 | 每周回顾 | 本周新增、你写下的话、观点变化、待回应的事项（只出报告，不改文件） |
 | 体检 | 检查失效链接、重复和矛盾的页面等，给出建议清单，你确认后才修改 |
-| 升级 | 更新 kit，并用新版本替换 vault 的系统文件，你的内容不受影响 |
+| 升级 | 等同于运行 `kb upgrade`：拉取新代码，更新系统文件；你的内容和设置不受影响 |
 
 抓取不到的链接（例如需要登录的页面）会在报告里列出来。用 [Obsidian Web Clipper](https://obsidian.md/clipper) 剪藏，保存位置设为 vault 的 `inbox/` 文件夹，下次处理时会一并入库。
 
@@ -107,7 +109,7 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 
 - 不要两台同时处理。另一台电脑 10 分钟内刚处理过时，会提醒你等 iCloud 同步完再处理。
 - 建议在 Finder 里右键 vault 文件夹，选"保留下载"，避免 iCloud 把文件只留在云端。
-- 升级时，两台电脑都要在 kit 目录 `git pull`；vault 里的系统文件只需要在其中一台上说"升级"，会随 iCloud 同步过去。
+- 升级时，两台电脑都运行一次 `kb upgrade`（各自更新本机的程序；vault 只会被改一次）。
 
 ## 版本记录（可选）
 
@@ -154,7 +156,7 @@ kb config --app-id <App ID> --app-secret <App Secret> --chat-id <群 ID>
 
 **iCloud 里出现了"文件名 2.md"**：这是两台设备同时修改造成的冲突副本。说"体检"，会提示你合并。
 
-**从 v0.1.0 升级**：在 vault 里说"升级"。`kb upgrade` 会把本机的处理进度并入 vault 的 `.kb/state.json`，并删除旧版本放在 vault 里的 `.git` 指针文件（原有历史仍在 `~/.second-brain/vault.git`，打开 `version_history` 后继续使用）。
+**怎么升级**：在 vault 目录运行 `kb upgrade`，它会自己拉取新代码、安装依赖、更新系统文件，你的内容和设置不受影响。详见[使用说明·升级](docs/使用说明.md#八升级)。从 v0.1.0 升级的第一次，需要先在 kit 目录手动运行一次 `git pull && npm install`。
 
 ## 开发
 
