@@ -84,6 +84,20 @@
       renderFrame(t);
       return canvas.toDataURL('image/png');
     },
+    covers: SB.covers.map(({ id, w, h }) => ({ id, w, h })),
+    /** Draw a still from covers.js and return it as a PNG data URL. */
+    cover(id) {
+      const c = SB.covers.find((x) => x.id === id);
+      canvas.width = c.w;
+      canvas.height = c.h;
+      SB.boil = 0;
+      SB.paper(ctx, c.w, c.h);
+      c.draw(ctx, c.w, c.h);
+      const url = canvas.toDataURL('image/png');
+      canvas.width = SB.W;
+      canvas.height = SB.H;
+      return url;
+    },
   };
 
   if (new URLSearchParams(location.search).has('render')) {

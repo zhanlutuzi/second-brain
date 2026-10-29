@@ -304,26 +304,29 @@
 
   // ---------- paper background ----------
 
-  let paper = null;
-  SB.paper = (ctx) => {
-    if (!paper) {
-      paper = document.createElement('canvas');
-      paper.width = SB.W;
-      paper.height = SB.H;
+  const papers = new Map();
+  /** Paper texture for a w×h canvas (default: the video frame). */
+  SB.paper = (ctx, w = SB.W, h = SB.H) => {
+    const key = `${w}x${h}`;
+    if (!papers.has(key)) {
+      const paper = document.createElement('canvas');
+      paper.width = w;
+      paper.height = h;
       const p = paper.getContext('2d');
       p.fillStyle = SB.C.paper;
-      p.fillRect(0, 0, SB.W, SB.H);
+      p.fillRect(0, 0, w, h);
       const r = SB.rng(42);
-      for (let i = 0; i < 9000; i++) {
+      for (let i = 0; i < Math.round((9000 * w * h) / (SB.W * SB.H)); i++) {
         p.fillStyle = r() < 0.5 ? 'rgba(120,100,80,0.06)' : 'rgba(255,255,255,0.25)';
-        p.fillRect(r() * SB.W, r() * SB.H, 1 + r() * 2, 1 + r() * 2);
+        p.fillRect(r() * w, r() * h, 1 + r() * 2, 1 + r() * 2);
       }
-      const g = p.createRadialGradient(SB.W / 2, SB.H / 2, SB.H * 0.4, SB.W / 2, SB.H / 2, SB.W * 0.75);
+      const g = p.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.4, w / 2, h / 2, Math.max(w, h) * 0.75);
       g.addColorStop(0, 'rgba(0,0,0,0)');
       g.addColorStop(1, 'rgba(90,70,50,0.12)');
       p.fillStyle = g;
-      p.fillRect(0, 0, SB.W, SB.H);
+      p.fillRect(0, 0, w, h);
+      papers.set(key, paper);
     }
-    ctx.drawImage(paper, 0, 0);
+    ctx.drawImage(papers.get(key), 0, 0);
   };
 })();

@@ -34,6 +34,12 @@ node video/render.mjs --audio
 
 只生成音轨 `video/build/soundtrack.wav`。
 
+```bash
+node video/render.mjs --covers
+```
+
+生成社交平台用的静态图到 `video/build/covers/`：小红书 3:4 组图 6 张（1080×1440，封面 + 5 张内页），B 站 16:9 封面 1 张（1920×1080）。
+
 代码里没有读取当前时间的地方，随机数也都有固定种子，所以同一份代码每次渲染的结果完全一样。
 
 ## 文件
@@ -45,6 +51,7 @@ node video/render.mjs --audio
 | `src/engine.js` | 缓动、种子随机数、会"抖动"的手绘线条、文字 |
 | `src/characters.js` | 小脑（吉祥物）、手机、电脑、文件夹、气泡和图标 |
 | `src/scenes.js` | 8 个镜头，每个镜头登记自己的音效时间点 |
+| `src/covers.js` | 小红书组图和 B 站封面，用的是视频里同一套角色和画法 |
 | `src/main.js` | 把镜头串成时间轴，处理转场，提供 `window.VIDEO` |
 | `src/soundtrack.mjs` | 按时间点合成配乐和音效，输出 WAV |
 | `assets/fonts/` | 霞鹜文楷的子集（只含视频用到的字），[OFL](assets/fonts/OFL.txt) 许可 |

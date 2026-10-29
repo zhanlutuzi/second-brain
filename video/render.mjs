@@ -5,6 +5,7 @@
 //   node video/render.mjs                    full video → video/second-brain.mp4
 //   node video/render.mjs --stills 3,16.5    PNG stills → video/build/stills/
 //   node video/render.mjs --audio            soundtrack only → video/build/soundtrack.wav
+//   node video/render.mjs --covers           social covers (src/covers.js) → video/build/covers/
 //
 // Options: --out <file>, --workers <n> (parallel browser pages, default 4)
 
@@ -23,6 +24,7 @@ const { values: args } = parseArgs({
     out: { type: 'string', default: join(ROOT, 'second-brain.mp4') },
     stills: { type: 'string' },
     audio: { type: 'boolean', default: false },
+    covers: { type: 'boolean', default: false },
     workers: { type: 'string', default: '4' },
   },
 });
@@ -63,7 +65,15 @@ try {
   writeFileSync(wav, soundtrack({ duration, cues }));
   console.log(`soundtrack: ${wav}`);
 
-  if (args.stills) {
+  if (args.covers) {
+    mkdirSync(join(BUILD, 'covers'), { recursive: true });
+    for (const { id } of await page.evaluate(() => window.VIDEO.covers)) {
+      const url = await page.evaluate((id) => window.VIDEO.cover(id), id);
+      const file = join(BUILD, 'covers', `${id}.png`);
+      writeFileSync(file, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
+      console.log(`cover: ${file}`);
+    }
+  } else if (args.stills) {
     mkdirSync(join(BUILD, 'stills'), { recursive: true });
     for (const t of args.stills.split(',').map(Number)) {
       const file = join(BUILD, 'stills', `${t.toFixed(2).padStart(6, '0')}.png`);
