@@ -19,3 +19,6 @@ coverage/
 
 # Promo video render cache (stills, soundtrack)
 video/build/
+
+# Promo page build output
+site/dist/
