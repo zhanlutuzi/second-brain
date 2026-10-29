@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二大脑 · 宣传视频</title>
+  <style>
+    @font-face { font-family: "LXGW WenKai"; font-weight: 400; src: url("assets/fonts/LXGWWenKai-Regular.woff2") format("woff2"); }
+    @font-face { font-family: "LXGW WenKai"; font-weight: 700; src: url("assets/fonts/LXGWWenKai-Bold.woff2") format("woff2"); }
+    @font-face { font-family: "LXGW WenKai Mono"; font-weight: 400; src: url("assets/fonts/LXGWWenKaiMono-Regular.woff2") format("woff2"); }
+    body { margin: 0; background: #2B2A33; color: #F6EFE2; font: 15px/1.4 system-ui, sans-serif; }
+    main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+    canvas { display: block; width: 100%; height: auto; border-radius: 8px; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+    .controls input { flex: 1; }
+    #chapters { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    button { background: #F6EFE2; color: #2B2A33; border: 0; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+    #time { font-variant-numeric: tabular-nums; }
+    body.render { background: #F6EFE2; }
+    body.render main { max-width: none; padding: 0; }
+    body.render canvas { width: 1920px; border-radius: 0; }
+    body.render .controls, body.render #chapters { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <canvas id="stage"></canvas>
+    <div class="controls">
+      <button id="play">播放</button>
+      <input id="seek" type="range" min="0" step="0.01" value="0">
+      <span id="time">0:00</span>
+    </div>
+    <div id="chapters"></div>
+    <!-- Written by `node video/render.mjs`; the player stays silent without it. -->
+    <audio id="audio" src="build/soundtrack.wav" preload="auto"></audio>
+  </main>
+  <script src="src/engine.js"></script>
+  <script src="src/characters.js"></script>
+  <script src="src/scenes.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>

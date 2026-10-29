@@ -18,6 +18,8 @@ flowchart LR
 
 > 📖 完整的使用说明（每天怎么用、升级会动什么、常见问题）见 **[docs/使用说明.md](docs/使用说明.md)**。
 
+> 🎬 一分钟看懂：[宣传视频](video/second-brain.mp4)（用代码画出来的，源码在 [video/](video/)）。
+
 ## 两部分
 
 | | kit（本仓库） | vault（你的知识库） |
