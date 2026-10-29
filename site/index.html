@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第二大脑 · 随手收集，AI 帮你整理成个人 wiki</title>
+  <meta name="description" content="把链接、想法、文件随手发进飞书群，电脑上说一句「处理收件箱」，Claude Code 把它们编译进 Obsidian 里的个人 wiki，每条要点都标明出处。开源，MIT。">
+  <meta property="og:title" content="第二大脑">
+  <meta property="og:description" content="随手丢进聊天框，AI 每天帮你整理成个人 wiki。">
+  <meta property="og:image" content="poster.jpg">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='%23F4A7B9' stroke='%232B2A33' stroke-width='7'/%3E%3Ccircle cx='36' cy='52' r='6' fill='%232B2A33'/%3E%3Ccircle cx='64' cy='52' r='6' fill='%232B2A33'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkaimono-regular.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="nav wrap">
+    <a class="logo" href="#top">第二大脑</a>
+    <nav>
+      <a href="#how">工作方式</a>
+      <a href="#daily">每天怎么用</a>
+      <a href="#install">安装</a>
+      <a href="https://github.com/zhanlutuzi/second-brain">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap">
+      <div class="hero-text">
+        <p class="eyebrow">飞书 · Claude Code · Obsidian</p>
+        <h1>第二大脑</h1>
+        <p class="lead">随手丢进聊天框，AI 每天帮你整理成<span class="mark">个人 wiki</span>。</p>
+        <p class="sub">看到好文章、冒出个想法，照旧发进飞书群。电脑开着时说一句「处理收件箱」，Claude Code 会把它们编译进 Obsidian 的主题页、项目页和生活页，每条要点都标明出处。</p>
+        <div class="actions">
+          <a class="btn primary" href="#install">15 分钟装好</a>
+          <a class="btn" href="https://github.com/zhanlutuzi/second-brain">在 GitHub 上查看</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <canvas id="mascot" width="360" height="360" aria-label="第二大脑的吉祥物：一颗粉色的卡通大脑" role="img"></canvas>
+        <p class="hint">戳戳它</p>
+      </div>
+    </section>
+
+    <section class="wrap video-block">
+      <h2>一分钟看懂</h2>
+      <video controls preload="none" poster="poster.jpg" src="second-brain.mp4"></video>
+    </section>
+
+    <section class="wrap">
+      <h2>收藏越多，脑子越乱？</h2>
+      <div class="grid three">
+        <article class="card">
+          <span class="num">1</span>
+          <h3>只有堆砌，没有结构</h3>
+          <p>同一个主题散落在聊天记录各处，没法串起来。</p>
+        </article>
+        <article class="card">
+          <span class="num">2</span>
+          <h3>只有输入，没有输出</h3>
+          <p>收藏完很少回看，自己的想法也没留下来。</p>
+        </article>
+        <article class="card">
+          <span class="num">3</span>
+          <h3>想用的时候，找不到</h3>
+          <p>只能在群里一页一页往上翻。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="wrap" id="how">
+      <h2>三步：收集、整理、思考</h2>
+      <div class="grid three">
+        <article class="card step teal">
+          <span class="badge">① 收集</span>
+          <h3>随手发进飞书群</h3>
+          <p>链接、想法、文件、图片、会议纪要，直接发。不打标签，不挑格式，不改习惯。要登录才能看的网页，用 Web Clipper 剪藏进 <code>inbox/</code>。</p>
+        </article>
+        <article class="card step blue">
+          <span class="badge">② 整理</span>
+          <h3>说一句「处理收件箱」</h3>
+          <p>拉取新消息、抓取网页正文，原文存进 <code>raw/</code>，要点编进主题、项目、生活页，每条都标明出处。处理过的消息会被加上表情，手机上一眼就能看出哪些已经入库。</p>
+        </article>
+        <article class="card step purple">
+          <span class="badge">③ 思考</span>
+          <h3>只问你一个问题</h3>
+          <p>处理完给出报告，再问你一个问题，比如「这篇你同意它哪一点？」。你的回答一字不改地记进 <code>思考/</code>。AI 不代写你的观点。</p>
+        </article>
+      </div>
+      <ol class="flow" aria-label="数据流">
+        <li>手机</li>
+        <li>飞书群</li>
+        <li>Claude Code + kb</li>
+        <li>Obsidian vault</li>
+        <li>翻 · 问 · 回顾</li>
+      </ol>
+    </section>
+
+    <section class="wrap" id="daily">
+      <h2>每天这样用</h2>
+      <p class="section-lead">打开终端运行 <code>kb-open</code>，然后直接说：</p>
+      <div class="grid two">
+        <div class="say"><p class="bubble">处理收件箱</p><p>拉取、抓取、入库、加表情，最后给出处理报告和一个追问。</p></div>
+        <div class="say"><p class="bubble">读书会的打卡功能为什么延期？</p><p>基于知识库回答，每个说法都附出处；项目类问题按日期列出决策。知识库里没有，就直说没有。</p></div>
+        <div class="say"><p class="bubble">把这个回答存下来</p><p>存成一个新的主题页，以后还能接着补充。</p></div>
+        <div class="say"><p class="bubble">每周回顾</p><p>本周新增了什么、你写下的话、观点有什么变化、还有哪些事没回应。只出报告，不改文件。</p></div>
+        <div class="say"><p class="bubble">体检</p><p>检查失效链接、重复和矛盾的页面、iCloud 冲突副本，给出建议清单，你确认后才动手。</p></div>
+        <div class="say"><p class="bubble">升级</p><p>拉取新代码、更新系统文件。你的内容和设置不受影响。</p></div>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <h2>几条原则</h2>
+      <div class="grid three">
+        <article class="card"><h3>收集零成本</h3><p>沿用发群的习惯，不需要任何新操作。整理不用 24 小时开着，电脑开机时一条命令集中处理。</p></article>
+        <article class="card"><h3>每条要点都有出处</h3><p>主题页的要点、问答里的论断，都链接回原文。<code>raw/</code> 里的原文只增不改，体检会检查有没有被动过。</p></article>
+        <article class="card"><h3>你的观点只用你的原话</h3><p>「我的看法」和 <code>思考/</code> 里只放你自己说的话。AI 负责归类和链接，不润色、不代写。</p></article>
+        <article class="card"><h3>内容属于你</h3><p>全部是普通 Markdown 文件，放在你自己的 iCloud 里，手机上用 Obsidian 也能看。个人内容永远不会进入这个仓库。</p></article>
+        <article class="card"><h3>多台电脑接力</h3><p>处理进度跟着知识库一起同步，任何一台装了 kit 的电脑都能接着处理，不会重复拉取。密钥只存在本机。</p></article>
+        <article class="card"><h3>开源、可升级</h3><p>MIT 许可。规则写在文件里而不是聊天窗口里，<code>kb upgrade</code> 一条命令升级，你的个人补充会保留。</p></article>
+      </div>
+    </section>
+
+    <section class="wrap" id="install">
+      <h2>15 分钟装好</h2>
+      <p class="section-lead">准备一台 Mac，装好 <a href="https://brew.sh">Homebrew</a>、Node.js、<a href="https://claude.com/claude-code">Claude Code</a> 和 <a href="https://obsidian.md">Obsidian</a>。</p>
+      <ol class="install">
+        <li>
+          <p>下载 kit：</p>
+          <div class="code"><code>git clone https://github.com/zhanlutuzi/second-brain.git ~/second-brain-kit</code><button type="button" class="copy">复制</button></div>
+        </li>
+        <li>
+          <p>在 kit 目录里启动 Claude Code：</p>
+          <div class="code"><code>cd ~/second-brain-kit &amp;&amp; claude</code><button type="button" class="copy">复制</button></div>
+        </li>
+        <li>
+          <p>输入 <code>/setup</code>，一问一答走完。它会检查环境、新建知识库、配置飞书（可以先跳过），再用 20 条示例数据试跑一次。</p>
+        </li>
+      </ol>
+      <p class="more">每天怎么用、升级会动什么、常见问题，见<a href="https://github.com/zhanlutuzi/second-brain/blob/main/docs/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md">使用说明</a>。</p>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <p>第二大脑 · <a href="https://github.com/zhanlutuzi/second-brain">second-brain-kit</a> · MIT 开源 · 基于 Karpathy 的 LLM-Wiki 模式</p>
+    <p>宣传片和这页上的小脑都是用代码画的，源码在 <a href="https://github.com/zhanlutuzi/second-brain/tree/main/video">video/</a> 和 <a href="https://github.com/zhanlutuzi/second-brain/tree/main/site">site/</a>。</p>
+  </footer>
+
+  <script src="js/engine.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

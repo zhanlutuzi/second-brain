@@ -19,6 +19,8 @@ flowchart LR
 > 📖 完整的使用说明（每天怎么用、升级会动什么、常见问题）见 **[docs/使用说明.md](docs/使用说明.md)**。
 
 > 🎬 一分钟看懂：[宣传视频](video/second-brain.mp4)（用代码画出来的，源码在 [video/](video/)）。
+>
+> 🌐 项目主页：<https://zhanlutuzi.github.io/second-brain/>（源码在 [site/](site/)）。
 
 ## 两部分
 
